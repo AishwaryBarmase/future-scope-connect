@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const SignupForm = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -201,9 +201,9 @@ const SignupForm = () => {
       
       <div className="mt-4 text-center text-sm">
         Already have an account?{" "}
-        <a href="#" className="text-primary hover:underline">
+        <Link to="/login" className="text-primary hover:underline">
           Sign in
-        </a>
+        </Link>
       </div>
     </div>
   );
