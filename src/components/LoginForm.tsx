@@ -56,17 +56,22 @@ const LoginForm = () => {
     setIsGoogleLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
+        provider: 'google',
         options: {
-          redirectTo: window.location.origin,
-        },
+          redirectTo: window.location.origin + '/', // Redirect to home page after login
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          }
+        }
       });
 
-      if (error) throw error;
-      
+      if (error) {
+        throw error;
+      }
     } catch (error: any) {
       toast({
-        title: "Google sign-in failed",
+        title: "Google Sign-In Failed",
         description: error.message || "There was an issue signing in with Google",
         variant: "destructive",
       });
