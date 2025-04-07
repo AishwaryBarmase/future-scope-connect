@@ -53,12 +53,14 @@ const LoginForm = () => {
   };
 
   const handleGoogleSignIn = async () => {
+    console.log("Initiating Google sign-in...");
     setIsGoogleLoading(true);
+    
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin + '/', // Redirect to home page after login
+          redirectTo: window.location.origin + '/',
           queryParams: {
             access_type: 'offline',
             prompt: 'consent'
@@ -66,10 +68,17 @@ const LoginForm = () => {
         }
       });
 
+      console.log("Google sign-in response:", { data, error });
+      
       if (error) {
         throw error;
       }
+      
+      // Note: At this point, the code won't execute as the user is redirected to Google
+      console.log("Google sign-in initiated successfully");
+      
     } catch (error: any) {
+      console.error("Google sign-in error:", error);
       toast({
         title: "Google Sign-In Failed",
         description: error.message || "There was an issue signing in with Google",
@@ -78,6 +87,37 @@ const LoginForm = () => {
       setIsGoogleLoading(false);
     }
   };
+
+  // Listen for authentication state changes
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state change event:", event);
+      console.log("Session:", session);
+      
+      if (event === 'SIGNED_IN' && session) {
+        toast({
+          title: "Login successful!",
+          description: "Welcome back to FutureScope.AI",
+        });
+        navigate("/");
+      }
+    });
+
+    // Check for existing session on component mount
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        console.log("User already has an active session:", session);
+        navigate("/");
+      }
+    };
+    
+    checkSession();
+    
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [navigate, toast]);
 
   return (
     <div className="glass-card animate-fadeIn animate-delay-300 w-full max-w-md mx-auto p-6 shadow-lg rounded-lg">
