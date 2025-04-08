@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import EditProfile from "./pages/EditProfile";
 import Settings from "./pages/Settings";
+import Results from "./pages/Results";
 import { Toaster } from "./components/ui/toaster";
 import { AuthProvider } from "./context/AuthContext";
 
@@ -18,6 +19,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile/edit" element={<EditProfile />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/results" element={<Results />} />
         </Routes>
         <Toaster />
       </AuthProvider>

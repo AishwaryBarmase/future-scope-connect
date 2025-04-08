@@ -544,6 +544,11 @@ const QuizComponent: React.FC<QuizComponentProps> = ({ onQuizComplete }) => {
     setCurrentSection(categories[0]);
     setStatusMessage(null);
   };
+
+  // View results
+  const handleViewResults = () => {
+    navigate('/results', { state: { responses: userResponses } });
+  };
   
   // Render final message if complete
   if (isComplete) {
@@ -557,8 +562,11 @@ const QuizComponent: React.FC<QuizComponentProps> = ({ onQuizComplete }) => {
           <Button onClick={() => navigate('/')} variant="outline">
             Return to Home
           </Button>
-          <Button onClick={handleRestartQuiz}>
+          <Button onClick={handleRestartQuiz} variant="outline">
             Take Quiz Again
+          </Button>
+          <Button onClick={handleViewResults}>
+            View Results
           </Button>
         </div>
       </div>

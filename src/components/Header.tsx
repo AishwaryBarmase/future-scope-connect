@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Menu, X, Settings, User as UserIcon, LogOut } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import {
   DropdownMenu,
@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, profile, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const getInitials = (name?: string) => {
     if (!name) return "U";
@@ -25,6 +26,17 @@ const Header = () => {
       .join("")
       .toUpperCase()
       .substring(0, 2);
+  };
+
+  const handleNavigation = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+      setIsMobileMenuOpen(false);
+    } else {
+      // If not on homepage, navigate to homepage with hash
+      navigate(`/#${sectionId}`);
+    }
   };
 
   return (
@@ -41,8 +53,8 @@ const Header = () => {
             <nav>
               <ul className="flex space-x-8">
                 <li><Link to="/" className="text-gray-700 hover:text-primary transition-colors">Home</Link></li>
-                <li><a href="#features" className="text-gray-700 hover:text-primary transition-colors">Features</a></li>
-                <li><a href="#about" className="text-gray-700 hover:text-primary transition-colors">About</a></li>
+                <li><a onClick={() => handleNavigation('features')} className="text-gray-700 hover:text-primary transition-colors cursor-pointer">Features</a></li>
+                <li><a onClick={() => handleNavigation('about')} className="text-gray-700 hover:text-primary transition-colors cursor-pointer">About</a></li>
               </ul>
             </nav>
             {user ? (
@@ -81,7 +93,7 @@ const Header = () => {
                 <Link to="/login">
                   <Button variant="outline" className="mr-2">Sign In</Button>
                 </Link>
-                <Link to="/login">
+                <Link to="/login" state={{ initialTab: 'signup' }}>
                   <Button>Get Started</Button>
                 </Link>
               </>
@@ -133,17 +145,19 @@ const Header = () => {
           <div className="md:hidden py-4">
             <nav>
               <ul className="space-y-4">
-                <li><Link to="/" className="block text-gray-700 hover:text-primary transition-colors">Home</Link></li>
-                <li><a href="#features" className="block text-gray-700 hover:text-primary transition-colors">Features</a></li>
-                <li><a href="#about" className="block text-gray-700 hover:text-primary transition-colors">About</a></li>
+                <li><Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="block text-gray-700 hover:text-primary transition-colors">Home</Link></li>
+                <li><a onClick={() => handleNavigation('features')} className="block text-gray-700 hover:text-primary transition-colors cursor-pointer">Features</a></li>
+                <li><a onClick={() => handleNavigation('about')} className="block text-gray-700 hover:text-primary transition-colors cursor-pointer">About</a></li>
               </ul>
             </nav>
             {!user && (
               <div className="mt-4 flex flex-col space-y-2">
-                <Link to="/login">
+                <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
                   <Button variant="outline" className="w-full">Sign In</Button>
                 </Link>
-                <Button className="w-full">Get Started</Button>
+                <Link to="/login" state={{ initialTab: 'signup' }} onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button className="w-full">Get Started</Button>
+                </Link>
               </div>
             )}
           </div>

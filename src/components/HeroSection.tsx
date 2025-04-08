@@ -3,13 +3,43 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Brain, LineChart, Target } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { useNavigate } from "react-router-dom";
 
 const HeroSection = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+
   const handleLearnMoreClick = () => {
     const featuresSection = document.getElementById('features');
     if (featuresSection) {
       featuresSection.scrollIntoView({ behavior: 'smooth' });
     }
+  };
+
+  const handleFindYourPathClick = () => {
+    if (user) {
+      console.log("Starting quiz for user:", user.id);
+      navigate("/#get-started");
+      window.location.reload(); // Force reload to ensure quiz is shown
+    } else {
+      setShowLoginPrompt(true);
+      // Store intention to take quiz after login
+      sessionStorage.setItem('redirectToQuiz', 'true');
+    }
+  };
+
+  const handleSignInClick = () => {
+    setShowLoginPrompt(false);
+    navigate('/login');
+  };
+
+  const handleSignUpClick = () => {
+    setShowLoginPrompt(false);
+    navigate('/login', { state: { initialTab: 'signup' } });
   };
 
   return (
@@ -26,10 +56,8 @@ const HeroSection = () => {
               We analyze your skills, interests, and goals to provide personalized recommendations.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button className="text-lg px-6 py-6" size="lg">
-                <Link to="/#get-started" className="flex items-center">
-                  Find Your Path <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
+              <Button className="text-lg px-6 py-6" size="lg" onClick={handleFindYourPathClick}>
+                Find Your Path <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button variant="outline" className="text-lg px-6 py-6" size="lg" onClick={handleLearnMoreClick}>
                 Learn More
@@ -91,6 +119,26 @@ const HeroSection = () => {
           </div>
         </div>
       </div>
+
+      {/* Login Prompt Dialog */}
+      <Dialog open={showLoginPrompt} onOpenChange={setShowLoginPrompt}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Sign in to continue</DialogTitle>
+            <DialogDescription>
+              You need to be signed in to take the career assessment quiz.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 mt-4">
+            <Button onClick={handleSignInClick}>
+              Sign In
+            </Button>
+            <Button variant="outline" onClick={handleSignUpClick}>
+              Create Account
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };
