@@ -70,6 +70,25 @@ const Index = () => {
     setQuizResponses(responses);
     setShowQuiz(false);
   };
+  
+  // Handler for restarting the quiz
+  const handleRestartQuiz = () => {
+    setShowQuiz(true);
+    setQuizResponses(null);
+  };
+
+  // Handler for returning to home page
+  const handleReturnHome = () => {
+    setShowQuiz(false);
+    setQuizResponses(null);
+    // Reload the page to ensure fresh state
+    window.location.href = '/';
+  };
+
+  // Handler for viewing results
+  const handleViewResults = () => {
+    navigate('/results', { state: { responses: quizResponses } });
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -85,8 +104,18 @@ const Index = () => {
           <div className="container mx-auto px-4 py-20">
             <div className="max-w-3xl mx-auto text-center p-6 bg-card text-card-foreground rounded-lg shadow-md">
               <h3 className="text-xl font-semibold mb-4">Quiz Completed!</h3>
-              <p>Your responses have been saved. We are now analyzing your profile.</p>
-              <p className="mt-4 text-sm text-muted-foreground">(Career suggestion display logic to be implemented)</p>
+              <p className="mb-6">Your responses have been saved. We can now provide personalized career recommendations.</p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button variant="outline" onClick={handleReturnHome}>
+                  Return to Home
+                </Button>
+                <Button variant="outline" onClick={handleRestartQuiz}>
+                  Take Quiz Again
+                </Button>
+                <Button onClick={handleViewResults}>
+                  View Results
+                </Button>
+              </div>
             </div>
           </div>
         ) : (

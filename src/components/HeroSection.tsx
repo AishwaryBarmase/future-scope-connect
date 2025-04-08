@@ -22,9 +22,11 @@ const HeroSection = () => {
 
   const handleFindYourPathClick = () => {
     if (user) {
-      console.log("Starting quiz for user:", user.id);
-      navigate("/#get-started");
-      window.location.reload(); // Force reload to ensure quiz is shown
+      // Directly scroll to the "get-started" section which will display the quiz
+      const getStartedSection = document.getElementById('get-started');
+      if (getStartedSection) {
+        getStartedSection.scrollIntoView({ behavior: 'smooth' });
+      }
     } else {
       setShowLoginPrompt(true);
       // Store intention to take quiz after login

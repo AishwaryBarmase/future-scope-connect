@@ -550,6 +550,11 @@ const QuizComponent: React.FC<QuizComponentProps> = ({ onQuizComplete }) => {
     navigate('/results', { state: { responses: userResponses } });
   };
   
+  // Return to home
+  const handleReturnHome = () => {
+    navigate('/', { replace: true });
+  };
+  
   // Render final message if complete
   if (isComplete) {
     return (
@@ -559,7 +564,7 @@ const QuizComponent: React.FC<QuizComponentProps> = ({ onQuizComplete }) => {
           {statusMessage?.text || "Your responses have been recorded."}
         </p>
         <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-          <Button onClick={() => navigate('/')} variant="outline">
+          <Button onClick={handleReturnHome} variant="outline">
             Return to Home
           </Button>
           <Button onClick={handleRestartQuiz} variant="outline">
@@ -689,7 +694,7 @@ const QuizComponent: React.FC<QuizComponentProps> = ({ onQuizComplete }) => {
               variant="destructive" 
               onClick={() => {
                 setConfirmQuit(false);
-                navigate('/');
+                navigate('/', { replace: true });
               }}
             >
               Yes, quit quiz
