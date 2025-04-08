@@ -1,9 +1,7 @@
 // src/components/QuizComponent.tsx
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient'; // Import the initialized client
+import { supabase } from '../integrations/supabase/client'; // Correct import path
 
-// --- Quiz Data ---
-// Make sure this includes ALL your questions from previous steps
 // Using interface for better type safety
 interface Option {
   id: string;
