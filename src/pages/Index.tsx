@@ -1,7 +1,8 @@
 
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import FeaturesSection from "@/components/FeaturesSection";
@@ -16,21 +17,57 @@ const Index = () => {
   const { user, profile, loading } = useAuth();
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizResponses, setQuizResponses] = useState<Record<string, string> | null>(null);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const featuresRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Check if we should redirect to quiz after login
+  useEffect(() => {
+    const redirectToQuiz = sessionStorage.getItem('redirectToQuiz');
+    if (redirectToQuiz === 'true' && user) {
+      sessionStorage.removeItem('redirectToQuiz');
+      setShowQuiz(true);
+    }
+  }, [user]);
 
   // Handler for the "Find your Path" button
   const handleFindYourPathClick = () => {
     if (user) {
       console.log("Starting quiz for user:", user.id);
-      setShowQuiz(true); // Show the quiz component
-      setQuizResponses(null); // Reset previous responses if any
+      setShowQuiz(true);
+      setQuizResponses(null);
+    } else {
+      setShowLoginPrompt(true);
+      // Store intention to take quiz after login
+      sessionStorage.setItem('redirectToQuiz', 'true');
     }
+  };
+
+  // Handler for "Learn More" button
+  const handleLearnMoreClick = () => {
+    const featuresSection = document.getElementById('features');
+    if (featuresSection) {
+      featuresSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  // Handler for sign-in button in prompt
+  const handleSignInClick = () => {
+    setShowLoginPrompt(false);
+    navigate('/login');
+  };
+
+  // Handler for get started (sign up) in prompt
+  const handleSignUpClick = () => {
+    setShowLoginPrompt(false);
+    navigate('/login', { state: { initialTab: 'signup' } });
   };
 
   // Handler called by QuizComponent upon completion
   const handleQuizCompletion = (responses: Record<string, string>) => {
     console.log("Quiz completed. Responses:", responses);
     setQuizResponses(responses);
-    // Hide the quiz component again
     setShowQuiz(false);
   };
 
@@ -74,26 +111,46 @@ const Index = () => {
                     </Button>
                   ) : (
                     <div className="space-y-4">
-                      <Link to="/login">
-                        <Button className="text-lg px-6 py-6" size="lg">
-                          Sign In to Begin
-                        </Button>
-                      </Link>
+                      <Button className="text-lg px-6 py-6" size="lg" onClick={handleFindYourPathClick}>
+                        Find Your Path
+                      </Button>
                       <p className="text-sm text-gray-500">
-                        Don't have an account? <Link to="/login" className="text-primary hover:underline">Sign up</Link>
+                        Don't have an account? <Link to="/login" state={{ initialTab: 'signup' }} className="text-primary hover:underline">Sign up</Link>
                       </p>
                     </div>
                   )}
                 </div>
               </div>
             </div>
-            <StatsSection />
-            <TestimonialsSection />
-            <CallToAction />
+            <div ref={featuresRef} id="features">
+              <StatsSection />
+              <TestimonialsSection />
+              <CallToAction />
+            </div>
           </>
         )}
       </main>
       <Footer />
+      
+      {/* Login Prompt Dialog */}
+      <Dialog open={showLoginPrompt} onOpenChange={setShowLoginPrompt}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Sign in to continue</DialogTitle>
+            <DialogDescription>
+              You need to be signed in to take the career assessment quiz.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 mt-4">
+            <Button onClick={handleSignInClick}>
+              Sign In
+            </Button>
+            <Button variant="outline" onClick={handleSignUpClick}>
+              Create Account
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

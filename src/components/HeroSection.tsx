@@ -2,8 +2,16 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Brain, LineChart, Target } from "lucide-react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 
 const HeroSection = () => {
+  const handleLearnMoreClick = () => {
+    const featuresSection = document.getElementById('features');
+    if (featuresSection) {
+      featuresSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <section className="min-h-screen pt-24 hero-gradient">
       <div className="container mx-auto px-4 py-12 md:py-20">
@@ -19,9 +27,11 @@ const HeroSection = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <Button className="text-lg px-6 py-6" size="lg">
-                Find Your Path <ArrowRight className="ml-2 h-5 w-5" />
+                <Link to="/#get-started" className="flex items-center">
+                  Find Your Path <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
               </Button>
-              <Button variant="outline" className="text-lg px-6 py-6" size="lg">
+              <Button variant="outline" className="text-lg px-6 py-6" size="lg" onClick={handleLearnMoreClick}>
                 Learn More
               </Button>
             </div>
