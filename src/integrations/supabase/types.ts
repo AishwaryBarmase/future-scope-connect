@@ -9,7 +9,90 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      careers: {
+        Row: {
+          created_at: string
+          description: string | null
+          education_level: string
+          id: string
+          name: string
+          profile_traits: Json | null
+          stream: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          education_level: string
+          id?: string
+          name: string
+          profile_traits?: Json | null
+          stream: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          education_level?: string
+          id?: string
+          name?: string
+          profile_traits?: Json | null
+          stream?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          address: string | null
+          avatar_url: string | null
+          created_at: string
+          date_of_birth: string | null
+          full_name: string | null
+          id: string
+          resume_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          full_name?: string | null
+          id: string
+          resume_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          full_name?: string | null
+          id?: string
+          resume_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      quiz_responses: {
+        Row: {
+          created_at: string
+          id: string
+          responses: Json | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          responses?: Json | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          responses?: Json | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

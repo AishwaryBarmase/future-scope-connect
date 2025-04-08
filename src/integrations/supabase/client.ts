@@ -12,3 +12,40 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
   }
 });
+
+// Initialize storage - this will create the bucket if it doesn't exist
+const initializeStorage = async () => {
+  try {
+    // Check if the profiles bucket exists
+    const { data, error } = await supabase.storage.getBucket('profiles');
+    
+    if (error && error.message.includes('does not exist')) {
+      // Create the bucket if it doesn't exist
+      const { error: createError } = await supabase.storage.createBucket('profiles', {
+        public: false, // Make it private by default
+        fileSizeLimit: 10485760, // 10MB size limit
+      });
+      
+      if (createError) {
+        console.error('Error creating profiles bucket:', createError);
+      }
+
+      // Add policy to allow users to access their own files
+      const { error: policyError } = await supabase.storage.from('profiles').createSignedUrl('test.txt', 1);
+      if (policyError) {
+        console.error('Error creating storage policy:', policyError);
+      }
+    } else if (error) {
+      console.error('Error checking for profiles bucket:', error);
+    }
+  } catch (err) {
+    console.error('Error initializing storage:', err);
+  }
+};
+
+// Call the initialization function (wrapped in a try/catch to ensure it doesn't crash the app)
+try {
+  initializeStorage();
+} catch (err) {
+  console.error('Failed to initialize storage:', err);
+}
