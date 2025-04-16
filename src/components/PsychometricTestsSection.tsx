@@ -31,7 +31,7 @@ const PSYCHOMETRIC_TESTS: PsychometricTest[] = [
   {
     name: "Vocabulary IQ Test",
     description: "An interactive vocabulary test that provides an IQ score, measuring verbal ability.",
-    link: "https://openpsychometrics.org/tests/VIQT/1.php"
+    link: "https://openpsychometrics.org/tests/VIQT/"
   },
   {
     name: "Brain Dominance Scale",
@@ -46,7 +46,7 @@ const PSYCHOMETRIC_TESTS: PsychometricTest[] = [
   {
     name: "Enneagram of Personality Test",
     description: "Explore your personality type within the 9 personality types of the Enneagram model.",
-    link: "https://openpsychometrics.org/tests/OEPS/1.php"
+    link: "https://openpsychometrics.org/tests/OEPS/"
   }
 ];
 
