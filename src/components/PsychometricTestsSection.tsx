@@ -117,27 +117,27 @@ const TestCard: React.FC<{ test: PsychometricTest; onTakeTest: () => void; }> = 
   
   return (
     <Card 
-      className={`h-full hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 overflow-hidden ${isExpanded ? 'ring-2 ring-primary' : ''}`}
+      className={`h-full hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden ${isExpanded ? 'ring-2 ring-primary' : ''}`}
       onClick={() => setIsExpanded(!isExpanded)}
     >
       <div className={`h-2 ${test.color}`}></div>
       <CardHeader className="pb-2">
         <div className="flex items-center gap-2">
           <div className={`p-2 rounded-full ${test.color} text-white`}>
-            <test.icon size={18} />
+            <test.icon size={20} className="animate-pulse" />
           </div>
           <CardTitle className="text-lg">{test.name}</CardTitle>
         </div>
       </CardHeader>
       <CardContent className="pt-0">
-        <HoverCard openDelay={200}>
+        <HoverCard openDelay={100}>
           <HoverCardTrigger asChild>
             <p className="text-sm text-gray-600 mb-4 cursor-pointer">
               {isExpanded ? test.fullDescription : test.description}
               {!isExpanded && <span className="text-primary text-xs ml-1 italic">Hover for more</span>}
             </p>
           </HoverCardTrigger>
-          <HoverCardContent className="w-80">
+          <HoverCardContent side="top" align="start" className="w-80 p-4 z-50">
             <div className="space-y-2">
               <h4 className="font-medium">{test.name}</h4>
               <p className="text-sm text-gray-600">{test.fullDescription}</p>
@@ -189,9 +189,9 @@ const PsychometricTestsSection = () => {
   const otherTests = PSYCHOMETRIC_TESTS.filter(test => test.category === 'other');
 
   return (
-    <section className="py-20 bg-gradient-to-b from-white to-gray-50">
+    <section className="py-20 bg-gradient-to-b from-white via-purple-50 to-blue-50">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
+        <div className="text-center mb-12 animate-fadeIn">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 gradient-text">
             Explore Your Potential
           </h2>
@@ -201,9 +201,9 @@ const PsychometricTestsSection = () => {
           </p>
         </div>
 
-        <div className="space-y-10">
+        <div className="space-y-12">
           {/* Personality Tests Row */}
-          <div className="space-y-3">
+          <div className="space-y-4 animate-fadeIn animate-delay-100">
             <h3 className="text-xl font-semibold text-gray-800 pl-2 border-l-4 border-primary">Personality Tests</h3>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               {personalityTests.map((test) => (
@@ -217,7 +217,7 @@ const PsychometricTestsSection = () => {
           </div>
 
           {/* Intelligence Tests Row */}
-          <div className="space-y-3">
+          <div className="space-y-4 animate-fadeIn animate-delay-200">
             <h3 className="text-xl font-semibold text-gray-800 pl-2 border-l-4 border-secondary">Intelligence Tests</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {intelligenceTests.map((test) => (
@@ -231,7 +231,7 @@ const PsychometricTestsSection = () => {
           </div>
 
           {/* Other Tests Row */}
-          <div className="space-y-3">
+          <div className="space-y-4 animate-fadeIn animate-delay-300">
             <h3 className="text-xl font-semibold text-gray-800 pl-2 border-l-4 border-accent">Other Assessments</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {otherTests.map((test) => (
