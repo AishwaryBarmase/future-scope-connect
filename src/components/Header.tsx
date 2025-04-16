@@ -1,7 +1,6 @@
-
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { Menu, X, Settings, User as UserIcon, LogOut } from "lucide-react";
+import { Menu, X, Settings, User as UserIcon, LogOut, Home, LayoutDashboard } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -52,7 +51,18 @@ const Header = () => {
           <div className="hidden md:flex items-center space-x-6">
             <nav>
               <ul className="flex space-x-8">
-                <li><Link to="/" className="text-gray-700 hover:text-primary transition-colors">Home</Link></li>
+                <li>
+                  <Link to="/" className="text-gray-700 hover:text-primary transition-colors">
+                    <Home className="inline-block mr-1 h-4 w-4" /> Home
+                  </Link>
+                </li>
+                {user && (
+                  <li>
+                    <Link to="/dashboard" className="text-gray-700 hover:text-primary transition-colors">
+                      <LayoutDashboard className="inline-block mr-1 h-4 w-4" /> Dashboard
+                    </Link>
+                  </li>
+                )}
                 <li><a onClick={() => handleNavigation('features')} className="text-gray-700 hover:text-primary transition-colors cursor-pointer">Features</a></li>
                 <li><a onClick={() => handleNavigation('about')} className="text-gray-700 hover:text-primary transition-colors cursor-pointer">About</a></li>
               </ul>
@@ -146,6 +156,11 @@ const Header = () => {
             <nav>
               <ul className="space-y-4">
                 <li><Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="block text-gray-700 hover:text-primary transition-colors">Home</Link></li>
+                {user && (
+                  <li>
+                    <Link to="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="block text-gray-700 hover:text-primary transition-colors">Dashboard</Link>
+                  </li>
+                )}
                 <li><a onClick={() => handleNavigation('features')} className="block text-gray-700 hover:text-primary transition-colors cursor-pointer">Features</a></li>
                 <li><a onClick={() => handleNavigation('about')} className="block text-gray-700 hover:text-primary transition-colors cursor-pointer">About</a></li>
               </ul>

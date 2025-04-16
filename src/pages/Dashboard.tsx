@@ -1,14 +1,38 @@
 
+import React, { useState, useEffect } from 'react';
 import { useAuth } from "@/context/AuthContext";
-import { Navigate, Link } from "react-router-dom";
-import QuizComponent from "@/components/QuizComponent";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { Navigate, Link } from "react-router-dom";
 
 const Dashboard = () => {
-  const { user, loading, profile } = useAuth();
-  
+  const { user, profile, loading } = useAuth();
+  const [testHistory, setTestHistory] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchTestHistory = async () => {
+      if (user) {
+        const { data, error } = await supabase
+          .from('test_history')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (data) {
+          setTestHistory(data);
+        }
+        if (error) {
+          console.error('Error fetching test history:', error);
+        }
+      }
+    };
+
+    fetchTestHistory();
+  }, [user]);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -31,13 +55,33 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="col-span-2">
               <div className="bg-white shadow-md rounded-lg p-6 mb-8">
-                <h2 className="text-xl font-semibold mb-4">Find Your Career Path</h2>
-                <p className="text-gray-600 mb-4">
-                  Take our comprehensive career assessment quiz to discover career paths that match your skills, interests, and personality.
-                </p>
-                <Link to="/quiz">
-                  <Button>Start Career Quiz</Button>
-                </Link>
+                <h2 className="text-xl font-semibold mb-4">Test History</h2>
+                {testHistory.length === 0 ? (
+                  <p className="text-gray-600">
+                    You haven't taken any tests yet. 
+                    <Link to="/#get-started" className="text-primary hover:underline ml-1">
+                      Start your career assessment
+                    </Link>
+                  </p>
+                ) : (
+                  testHistory.map((test, index) => (
+                    <Card key={test.id} className="mb-4">
+                      <CardHeader>
+                        <CardTitle>{test.test_type} Test</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex justify-between items-center">
+                          <p className="text-sm text-gray-600">
+                            Taken on: {new Date(test.created_at).toLocaleString()}
+                          </p>
+                          <Button variant="outline" size="sm">
+                            View Details
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
               </div>
             </div>
             

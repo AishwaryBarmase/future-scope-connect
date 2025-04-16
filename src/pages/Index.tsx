@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import TestimonialsSection from "@/components/TestimonialsSection";
 import CallToAction from "@/components/CallToAction";
 import Footer from "@/components/Footer";
 import QuizComponent from '@/components/QuizComponent';
+import PsychometricTestsSection from '@/components/PsychometricTestsSection';
 import { useAuth } from '@/context/AuthContext';
 
 const Index = () => {
@@ -121,7 +121,6 @@ const Index = () => {
         ) : (
           <>
             <HeroSection />
-            <FeaturesSection />
             <div className="py-20 bg-white" id="get-started">
               <div className="container mx-auto px-4">
                 <div className="text-center max-w-3xl mx-auto mb-16">
@@ -151,6 +150,10 @@ const Index = () => {
                 </div>
               </div>
             </div>
+            
+            {/* Add Psychometric Tests Section */}
+            <PsychometricTestsSection />
+            
             <div ref={featuresRef} id="features">
               <StatsSection />
               <TestimonialsSection />
