@@ -2,11 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { Navigate, Link } from "react-router-dom";
+import { Navigate } from "react-router-dom";
+import TestHistory from "@/components/dashboard/TestHistory";
+import QuickLinks from "@/components/dashboard/QuickLinks";
 
 const Dashboard = () => {
   const { user, profile, loading } = useAuth();
@@ -54,53 +54,11 @@ const Dashboard = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="col-span-2">
-              <div className="bg-white shadow-md rounded-lg p-6 mb-8">
-                <h2 className="text-xl font-semibold mb-4">Test History</h2>
-                {testHistory.length === 0 ? (
-                  <p className="text-gray-600">
-                    You haven't taken any tests yet. 
-                    <Link to="/#get-started" className="text-primary hover:underline ml-1">
-                      Start your career assessment
-                    </Link>
-                  </p>
-                ) : (
-                  testHistory.map((test, index) => (
-                    <Card key={test.id} className="mb-4">
-                      <CardHeader>
-                        <CardTitle>{test.test_type} Test</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex justify-between items-center">
-                          <p className="text-sm text-gray-600">
-                            Taken on: {new Date(test.created_at).toLocaleString()}
-                          </p>
-                          <Button variant="outline" size="sm">
-                            View Details
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
-              </div>
+              <TestHistory testHistory={testHistory} />
             </div>
             
             <div>
-              <div className="bg-white shadow-md rounded-lg p-6 mb-8">
-                <h2 className="text-xl font-semibold mb-4">Quick Links</h2>
-                <ul className="space-y-2">
-                  <li>
-                    <Link to="/profile/edit" className="text-blue-600 hover:underline">
-                      Edit Profile
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/settings" className="text-blue-600 hover:underline">
-                      Account Settings
-                    </Link>
-                  </li>
-                </ul>
-              </div>
+              <QuickLinks />
             </div>
           </div>
         </div>
