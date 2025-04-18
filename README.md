@@ -12,7 +12,17 @@ Welcome to the FutureScope.AI (Career Guidance Application) GitHub repository! T
 3. Resources for skill development and educational paths.
 4. Insights into current job market trends.
 5. Interactive quizzes and tools for self-assessment.
+   
+## What technologies are used for this project?
 
+This project is built with:
+
+- Vite
+- TypeScript
+- React
+- shadcn-ui
+- Tailwind CSS
+  
 ## Usage Instructions
 
 Step 0:- Visit  https://preview--future-scope-connect.lovable.app/
@@ -76,13 +86,5 @@ npm run dev
 - Click on "New codespace" to launch a new Codespace environment.
 - Edit files directly within the Codespace and commit and push your changes once you're done.
 
-## What technologies are used for this project?
 
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
 
