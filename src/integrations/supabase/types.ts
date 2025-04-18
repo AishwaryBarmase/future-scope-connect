@@ -9,6 +9,71 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      career_categories: {
+        Row: {
+          created_at: string
+          id: string
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      career_options: {
+        Row: {
+          category_id: string
+          course_links: Json | null
+          created_at: string
+          description: string | null
+          id: string
+          keywords: string[]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          course_links?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          keywords?: string[]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          course_links?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          keywords?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "career_options_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "career_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       careers: {
         Row: {
           created_at: string
