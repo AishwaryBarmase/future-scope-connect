@@ -13,7 +13,7 @@ Welcome to the FutureScope.AI (Career Guidance Application) GitHub repository! T
 4. Insights into current job market trends.
 5. Interactive quizzes and tools for self-assessment.
 
-##Usage Instructions
+## Usage Instructions
 
 Step 0:- Visit  https://preview--future-scope-connect.lovable.app/
 
