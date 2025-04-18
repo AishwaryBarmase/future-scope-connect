@@ -9,72 +9,50 @@ import { useYouTubeVideos } from '@/hooks/useYouTubeVideos';
 import { Home, ArrowLeft } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { fetchCourseraContent } from '@/utils/courseraApi';
+import { getRoadmapLink } from '@/data/careerRoadmaps';
 
-interface Course {
+interface CourseraArticle {
   title: string;
-  provider: string;
-  url: string;
+  link: string;
+  author?: string;
 }
 
 const CareerDetail = () => {
   const { categoryTitle, careerTitle } = useParams<{ categoryTitle: string; careerTitle?: string }>();
   const { categories, careerOptions, loading: loadingOptions } = useCareerOptions();
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [courseraContent, setCourseraContent] = useState<{ courses: any[], articles: CourseraArticle[] }>({ 
+    courses: [], 
+    articles: [] 
+  });
   
-  // Decode URL parameters
   const decodedCategoryTitle = categoryTitle ? decodeURIComponent(categoryTitle) : '';
   const decodedCareerTitle = careerTitle ? decodeURIComponent(careerTitle) : '';
   
-  // Find the matching category and options
   const category = categories.find(cat => cat.title === decodedCategoryTitle);
   const careerOptionsInCategory = careerOptions.filter(option => 
     option.category_id === category?.id
   );
   
-  // Get the specific career if careerTitle is provided
   const selectedCareer = careerTitle 
     ? careerOptionsInCategory.find(option => option.title === decodedCareerTitle)
     : null;
 
-  // Determine the search query based on whether a specific career or just a category is selected
   const searchQuery = selectedCareer 
     ? `${selectedCareer.title} career guide` 
     : `${decodedCategoryTitle} careers guide`;
 
   const { videos, loading: loadingVideos } = useYouTubeVideos(searchQuery, 6);
+  const roadmapLink = selectedCareer ? getRoadmapLink(selectedCareer.title) : null;
 
   useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        const response = await fetch('https://api.example.com/courses'); // You'll need to implement this endpoint
-        const data = await response.json();
-        setCourses(data);
-      } catch (error) {
-        console.error('Error fetching courses:', error);
-        // Fallback to mock data for now
-        const mockCourses: Course[] = [
-          { 
-            title: `Introduction to ${selectedCareer?.title || decodedCategoryTitle}`, 
-            provider: 'Coursera', 
-            url: 'https://www.coursera.org' 
-          },
-          { 
-            title: `Advanced ${selectedCareer?.title || decodedCategoryTitle}`, 
-            provider: 'edX', 
-            url: 'https://www.edx.org' 
-          },
-          { 
-            title: `${selectedCareer?.title || decodedCategoryTitle} Specialization`, 
-            provider: 'Coursera', 
-            url: 'https://www.coursera.org' 
-          }
-        ];
-        setCourses(mockCourses);
-      }
+    const fetchContent = async () => {
+      const content = await fetchCourseraContent(searchQuery);
+      setCourseraContent(content);
     };
     
-    fetchCourses();
-  }, [decodedCategoryTitle, selectedCareer]);
+    fetchContent();
+  }, [searchQuery]);
 
   if (loadingOptions) {
     return <div className="text-center py-20 min-h-screen">Loading career information...</div>;
@@ -109,18 +87,27 @@ const CareerDetail = () => {
               {selectedCareer?.title || `${decodedCategoryTitle} Careers`}
             </h1>
             {selectedCareer && (
-              <p className="text-lg text-gray-700 mb-4">
-                {selectedCareer.description}
-              </p>
+              <div className="space-y-4">
+                <p className="text-lg text-gray-700">
+                  {selectedCareer.description}
+                </p>
+                {roadmapLink && (
+                  <div className="mt-4">
+                    <Button
+                      onClick={() => window.open(roadmapLink, '_blank')}
+                      className="bg-primary hover:bg-primary/90"
+                    >
+                      View Career Roadmap
+                    </Button>
+                  </div>
+                )}
+              </div>
             )}
           </motion.div>
 
           {/* YouTube Videos Section */}
           <section className="mb-12">
-            <h2 className="text-2xl font-semibold mb-6">
-              Career Guide Videos
-            </h2>
-            
+            <h2 className="text-2xl font-semibold mb-6">Career Guide Videos</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {loadingVideos ? (
                 <div className="col-span-full text-center py-8">Loading videos...</div>
@@ -154,31 +141,60 @@ const CareerDetail = () => {
           </section>
 
           {/* Course Recommendations Section */}
-          <section>
-            <h2 className="text-2xl font-semibold mb-6">
-              Recommended Courses
-            </h2>
-            
+          <section className="mb-12">
+            <h2 className="text-2xl font-semibold mb-6">Recommended Courses</h2>
             <div className="grid md:grid-cols-2 gap-6">
-              {courses.map((course, index) => (
-                <Card key={index} className="bg-white hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="font-semibold text-lg mb-2">{course.title}</h3>
-                        <p className="text-sm text-gray-600">Provider: {course.provider}</p>
+              {courseraContent.courses.length === 0 ? (
+                <div className="col-span-full text-center py-8">No courses found</div>
+              ) : (
+                courseraContent.courses.map((course, index) => (
+                  <Card key={index} className="bg-white hover:shadow-lg transition-shadow">
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="font-semibold text-lg mb-2">{course.name}</h3>
+                          <p className="text-sm text-gray-600">Provider: {course.partner}</p>
+                        </div>
                       </div>
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={() => window.open(course.url, '_blank')}
-                    >
-                      View Course
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => window.open(course.link, '_blank')}
+                      >
+                        View Course
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </section>
+
+          {/* Articles Section */}
+          <section className="mb-12">
+            <h2 className="text-2xl font-semibold mb-6">Related Articles</h2>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {courseraContent.articles.length === 0 ? (
+                <div className="col-span-full text-center py-8">No articles found</div>
+              ) : (
+                courseraContent.articles.map((article, index) => (
+                  <Card key={index} className="bg-white hover:shadow-lg transition-shadow">
+                    <CardContent className="p-6">
+                      <h3 className="font-semibold text-lg mb-2 line-clamp-2">{article.title}</h3>
+                      {article.author && (
+                        <p className="text-sm text-gray-600 mb-4">By: {article.author}</p>
+                      )}
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => window.open(article.link, '_blank')}
+                      >
+                        Read Article
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </div>
           </section>
         </div>
