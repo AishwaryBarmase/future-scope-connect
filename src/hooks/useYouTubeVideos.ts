@@ -29,7 +29,13 @@ export const useYouTubeVideos = (query: string, maxResults: number = 6) => {
 
         if (fetchError) throw fetchError;
 
-        setVideos(data.videos);
+        // Transform the videos to include embed URLs
+        const transformedVideos = data.videos.map((video: YouTubeVideo) => ({
+          ...video,
+          videoUrl: `https://www.youtube.com/embed/${video.id}` // Convert to embed URL
+        }));
+
+        setVideos(transformedVideos);
         setLoading(false);
       } catch (err) {
         console.error('Error fetching YouTube videos:', err);

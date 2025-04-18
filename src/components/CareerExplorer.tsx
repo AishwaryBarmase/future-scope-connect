@@ -1,23 +1,16 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCareerOptions } from '@/hooks/useCareerOptions';
-import { 
-  Accordion, 
-  AccordionContent, 
-  AccordionItem, 
-  AccordionTrigger 
-} from '@/components/ui/accordion';
 
-// Custom ordering for categories
+// Custom ordering for categories with updated names
 const CATEGORY_ORDER = [
-  "Technology and Engineering",
-  "Business and Management",
-  "Healthcare and Medicine",
-  "Creative Arts and Design",
-  "Education and Teaching",
+  "Technology & Engineering",
+  "Business & Management",
+  "Health & Science",
+  "Education & Academia",
+  "Creative & Media",
   "Miscellaneous"
 ];
 
@@ -74,26 +67,19 @@ const CareerExplorer: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Accordion type="single" collapsible>
+              <div className="space-y-2">
                 {careerOptions
                   .filter(option => option.category_id === category.id)
                   .map(option => (
-                    <AccordionItem key={option.id} value={option.id}>
-                      <AccordionTrigger>
-                        {option.title}
-                      </AccordionTrigger>
-                      <AccordionContent className="space-y-4 p-4 bg-gray-50">
-                        <p>{option.description}</p>
-                        <Button 
-                          onClick={() => handleCareerClick(category.title, option.title)}
-                          className="w-full"
-                        >
-                          Explore {option.title}
-                        </Button>
-                      </AccordionContent>
-                    </AccordionItem>
+                    <div
+                      key={option.id}
+                      onClick={() => handleCareerClick(category.title, option.title)}
+                      className="p-3 rounded-md hover:bg-gray-50 cursor-pointer transition-colors text-gray-700 hover:text-primary"
+                    >
+                      {option.title}
+                    </div>
                   ))}
-              </Accordion>
+              </div>
             </CardContent>
           </Card>
         ))}

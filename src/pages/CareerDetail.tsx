@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import { useCareerOptions } from '@/hooks/useCareerOptions';
 import { useYouTubeVideos } from '@/hooks/useYouTubeVideos';
-import { PlayIcon, Home, ArrowLeft, BookOpen } from 'lucide-react';
+import { Home, ArrowLeft } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
@@ -43,34 +43,34 @@ const CareerDetail = () => {
 
   const { videos, loading: loadingVideos } = useYouTubeVideos(searchQuery, 6);
 
-  // Mock function to fetch course recommendations
   useEffect(() => {
-    const fetchCourses = () => {
-      // Mock data - in a real app, this would be an API call
-      const mockCourses: Course[] = [
-        { 
-          title: `Introduction to ${selectedCareer?.title || decodedCategoryTitle}`, 
-          provider: 'Coursera', 
-          url: 'https://www.coursera.org' 
-        },
-        { 
-          title: `Advanced ${selectedCareer?.title || decodedCategoryTitle}`, 
-          provider: 'edX', 
-          url: 'https://www.edx.org' 
-        },
-        { 
-          title: `${selectedCareer?.title || decodedCategoryTitle} Certification`, 
-          provider: 'Udemy', 
-          url: 'https://www.udemy.com' 
-        },
-        { 
-          title: `${selectedCareer?.title || decodedCategoryTitle} Masterclass`, 
-          provider: 'MasterClass', 
-          url: 'https://www.masterclass.com' 
-        }
-      ];
-      
-      setCourses(mockCourses);
+    const fetchCourses = async () => {
+      try {
+        const response = await fetch('https://api.example.com/courses'); // You'll need to implement this endpoint
+        const data = await response.json();
+        setCourses(data);
+      } catch (error) {
+        console.error('Error fetching courses:', error);
+        // Fallback to mock data for now
+        const mockCourses: Course[] = [
+          { 
+            title: `Introduction to ${selectedCareer?.title || decodedCategoryTitle}`, 
+            provider: 'Coursera', 
+            url: 'https://www.coursera.org' 
+          },
+          { 
+            title: `Advanced ${selectedCareer?.title || decodedCategoryTitle}`, 
+            provider: 'edX', 
+            url: 'https://www.edx.org' 
+          },
+          { 
+            title: `${selectedCareer?.title || decodedCategoryTitle} Specialization`, 
+            provider: 'Coursera', 
+            url: 'https://www.coursera.org' 
+          }
+        ];
+        setCourses(mockCourses);
+      }
     };
     
     fetchCourses();
@@ -113,11 +113,6 @@ const CareerDetail = () => {
                 {selectedCareer.description}
               </p>
             )}
-            {!selectedCareer && (
-              <p className="text-lg text-gray-700 mb-4">
-                Explore various career opportunities in {decodedCategoryTitle}
-              </p>
-            )}
           </motion.div>
 
           {/* YouTube Videos Section */}
@@ -126,7 +121,7 @@ const CareerDetail = () => {
               Career Guide Videos
             </h2>
             
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {loadingVideos ? (
                 <div className="col-span-full text-center py-8">Loading videos...</div>
               ) : videos.length === 0 ? (
@@ -135,25 +130,22 @@ const CareerDetail = () => {
                 videos.map(video => (
                   <motion.div 
                     key={video.id}
-                    whileHover={{ scale: 1.03 }}
+                    whileHover={{ scale: 1.02 }}
                     className="bg-white rounded-lg overflow-hidden shadow-md"
                   >
-                    <img 
-                      src={video.thumbnailUrl} 
-                      alt={video.title} 
-                      className="w-full h-48 object-cover"
-                    />
+                    <div className="aspect-video">
+                      <iframe
+                        src={video.videoUrl}
+                        title={video.title}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="w-full h-full"
+                      />
+                    </div>
                     <div className="p-4">
-                      <h4 className="font-medium text-sm mb-3 line-clamp-2 h-10">
+                      <h4 className="font-medium text-sm line-clamp-2 h-10">
                         {video.title}
                       </h4>
-                      <Button 
-                        size="sm" 
-                        className="w-full"
-                        onClick={() => window.open(video.videoUrl, '_blank')}
-                      >
-                        <PlayIcon className="mr-2 h-4 w-4" /> Watch Video
-                      </Button>
                     </div>
                   </motion.div>
                 ))
@@ -171,16 +163,15 @@ const CareerDetail = () => {
               {courses.map((course, index) => (
                 <Card key={index} className="bg-white hover:shadow-lg transition-shadow">
                   <CardContent className="p-6">
-                    <div className="flex justify-between items-start">
+                    <div className="flex justify-between items-start mb-4">
                       <div>
                         <h3 className="font-semibold text-lg mb-2">{course.title}</h3>
-                        <p className="text-sm text-gray-600 mb-4">Provider: {course.provider}</p>
+                        <p className="text-sm text-gray-600">Provider: {course.provider}</p>
                       </div>
-                      <BookOpen className="text-primary h-6 w-6" />
                     </div>
                     <Button 
                       variant="outline" 
-                      className="w-full mt-2"
+                      className="w-full"
                       onClick={() => window.open(course.url, '_blank')}
                     >
                       View Course
