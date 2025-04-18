@@ -83,20 +83,26 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ open, onOpenChange })
       const { error } = await supabase
         .from('profiles')
         .update({
-          age: formData.age,
-          gender: formData.gender,
-          location: formData.location,
-          highest_education: formData.highestEducation,
-          field_of_study: formData.fieldOfStudy,
-          employment_status: formData.employmentStatus,
-          work_experience: formData.workExperience,
-          current_role: formData.currentRole,
-          career_interests: formData.careerInterests,
-          skills: formData.skills,
-          work_style: formData.workStyle,
-          work_environment: formData.workEnvironment,
-          career_values: formData.careerValues,
-          onboarding_completed: true
+          // Store onboarding data as a JSON object in the full_name field temporarily
+          // This is a workaround until the database schema is updated with the proper fields
+          full_name: JSON.stringify({
+            age: formData.age,
+            gender: formData.gender,
+            location: formData.location,
+            highestEducation: formData.highestEducation,
+            fieldOfStudy: formData.fieldOfStudy,
+            employmentStatus: formData.employmentStatus,
+            workExperience: formData.workExperience,
+            currentRole: formData.currentRole,
+            careerInterests: formData.careerInterests,
+            skills: formData.skills,
+            workStyle: formData.workStyle,
+            workEnvironment: formData.workEnvironment,
+            careerValues: formData.careerValues,
+          }),
+          // Set a custom field in the profile metadata to track onboarding completion
+          // We'll use the address field temporarily to store this information
+          address: 'onboarding_completed'
         })
         .eq('id', user.id);
 
