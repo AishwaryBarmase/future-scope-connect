@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface YouTubeVideo {
   id: string;
@@ -23,24 +23,13 @@ export const useYouTubeVideos = (query: string, maxResults: number = 6) => {
       }
 
       try {
-        const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
-          params: {
-            part: 'snippet',
-            q: query + ' career guide',
-            type: 'video',
-            maxResults,
-            key: 'AIzaSyC8xD3S4VvDn1KmCCiyZgHjW-0tF3ShHGo'
-          }
+        const { data, error: fetchError } = await supabase.functions.invoke('fetch-youtube-videos', {
+          body: { query, maxResults }
         });
 
-        const fetchedVideos: YouTubeVideo[] = response.data.items.map(item => ({
-          id: item.id.videoId,
-          title: item.snippet.title,
-          thumbnailUrl: item.snippet.thumbnails.medium.url,
-          videoUrl: `https://www.youtube.com/embed/${item.id.videoId}`
-        }));
+        if (fetchError) throw fetchError;
 
-        setVideos(fetchedVideos);
+        setVideos(data.videos);
         setLoading(false);
       } catch (err) {
         console.error('Error fetching YouTube videos:', err);

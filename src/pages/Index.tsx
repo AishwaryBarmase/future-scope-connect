@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ import QuizComponent from '@/components/QuizComponent';
 import PsychometricTestsSection from '@/components/PsychometricTestsSection';
 import OnboardingModal from '@/components/OnboardingModal';
 import { useAuth } from '@/context/AuthContext';
+import CareerExplorer from '@/components/CareerExplorer';
 
 const Index = () => {
   const { user, profile, loading } = useAuth();
@@ -169,6 +169,9 @@ const Index = () => {
             
             {/* Add Psychometric Tests Section */}
             <PsychometricTestsSection />
+            
+            {/* Add Career Explorer Section */}
+            <CareerExplorer />
             
             <div ref={featuresRef} id="features">
               <StatsSection />

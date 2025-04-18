@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { Menu, X, Settings, User as UserIcon, LogOut, Home, LayoutDashboard } from "lucide-react";
+import { Menu, X, Settings, User as UserIcon, LogOut, Home, LayoutDashboard, Briefcase } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -65,6 +65,11 @@ const Header = () => {
                 )}
                 <li><a onClick={() => handleNavigation('features')} className="text-gray-700 hover:text-primary transition-colors cursor-pointer">Features</a></li>
                 <li><a onClick={() => handleNavigation('about')} className="text-gray-700 hover:text-primary transition-colors cursor-pointer">About</a></li>
+                <li>
+                  <Link to="/careers" className="text-gray-700 hover:text-primary transition-colors">
+                    <Briefcase className="inline-block mr-1 h-4 w-4" /> Careers
+                  </Link>
+                </li>
               </ul>
             </nav>
             {user ? (
@@ -163,6 +168,15 @@ const Header = () => {
                 )}
                 <li><a onClick={() => handleNavigation('features')} className="block text-gray-700 hover:text-primary transition-colors cursor-pointer">Features</a></li>
                 <li><a onClick={() => handleNavigation('about')} className="block text-gray-700 hover:text-primary transition-colors cursor-pointer">About</a></li>
+                <li>
+                  <Link 
+                    to="/careers" 
+                    onClick={() => setIsMobileMenuOpen(false)} 
+                    className="block text-gray-700 hover:text-primary transition-colors"
+                  >
+                    Careers
+                  </Link>
+                </li>
               </ul>
             </nav>
             {!user && (
