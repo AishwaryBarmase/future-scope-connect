@@ -63,8 +63,7 @@ Follow these steps:
 git clone https://github.com/AishwaryBarmase/future-scope-connect.git
 
 # Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
+cd future-scope-connect
 # Step 3: Install the necessary dependencies.
 npm i
 
