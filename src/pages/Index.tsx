@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -170,8 +171,10 @@ const Index = () => {
             {/* Add Psychometric Tests Section */}
             <PsychometricTestsSection />
             
-            {/* Add Career Explorer Section */}
-            <CareerExplorer />
+            {/* Add Career Explorer Section with id for direct navigation */}
+            <div id="careers">
+              <CareerExplorer />
+            </div>
             
             <div ref={featuresRef} id="features">
               <StatsSection />

@@ -1,38 +1,77 @@
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCareerOptions } from '@/hooks/useCareerOptions';
-import { useYouTubeVideos } from '@/hooks/useYouTubeVideos';
 import { 
   Accordion, 
   AccordionContent, 
   AccordionItem, 
   AccordionTrigger 
 } from '@/components/ui/accordion';
-import { PlayIcon } from 'lucide-react';
+
+// Custom ordering for categories
+const CATEGORY_ORDER = [
+  "Technology and Engineering",
+  "Business and Management",
+  "Healthcare and Medicine",
+  "Creative Arts and Design",
+  "Education and Teaching",
+  "Miscellaneous"
+];
 
 const CareerExplorer: React.FC = () => {
   const { categories, careerOptions, loading: loadingOptions } = useCareerOptions();
-  const [selectedCareer, setSelectedCareer] = useState<string | null>(null);
-  const { videos, loading: loadingVideos } = useYouTubeVideos(selectedCareer || '', 3);
+  const [orderedCategories, setOrderedCategories] = useState<any[]>([]);
+  const navigate = useNavigate();
+
+  // Order categories according to the specified order
+  useEffect(() => {
+    if (categories.length > 0) {
+      const ordered = [...categories].sort((a, b) => {
+        const indexA = CATEGORY_ORDER.indexOf(a.title);
+        const indexB = CATEGORY_ORDER.indexOf(b.title);
+        
+        // If category not in our order list, put at the end
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        
+        return indexA - indexB;
+      });
+      
+      setOrderedCategories(ordered);
+    }
+  }, [categories]);
+
+  const handleCareerClick = (categoryTitle: string, careerTitle: string) => {
+    navigate(`/career/${encodeURIComponent(categoryTitle)}/${encodeURIComponent(careerTitle)}`);
+  };
+
+  const handleCategoryClick = (categoryTitle: string) => {
+    navigate(`/career/${encodeURIComponent(categoryTitle)}`);
+  };
 
   if (loadingOptions) {
     return <div className="text-center py-10">Loading career options...</div>;
   }
 
   return (
-    <div className="container mx-auto px-4 py-12 bg-gradient-to-br from-purple-50 to-blue-50">
+    <div id="careers" className="container mx-auto px-4 py-12 bg-gradient-to-br from-purple-50 to-blue-50">
       <h2 className="text-4xl font-bold text-center mb-10 gradient-text">
         Explore Career Paths
       </h2>
 
       <div className="grid md:grid-cols-3 gap-6">
-        {categories.map(category => (
+        {orderedCategories.map(category => (
           <Card key={category.id} className="bg-white shadow-lg hover:shadow-xl transition-all">
             <CardHeader>
-              <CardTitle>{category.title}</CardTitle>
+              <CardTitle 
+                className="cursor-pointer hover:text-primary transition-colors"
+                onClick={() => handleCategoryClick(category.title)}
+              >
+                {category.title}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <Accordion type="single" collapsible>
@@ -46,8 +85,7 @@ const CareerExplorer: React.FC = () => {
                       <AccordionContent className="space-y-4 p-4 bg-gray-50">
                         <p>{option.description}</p>
                         <Button 
-                          variant="outline" 
-                          onClick={() => setSelectedCareer(option.title)}
+                          onClick={() => handleCareerClick(category.title, option.title)}
                           className="w-full"
                         >
                           Explore {option.title}
@@ -60,50 +98,6 @@ const CareerExplorer: React.FC = () => {
           </Card>
         ))}
       </div>
-
-      {selectedCareer && (
-        <motion.div 
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-12 bg-white rounded-lg shadow-lg p-6"
-        >
-          <h3 className="text-2xl font-semibold mb-6">
-            {selectedCareer} Career Resources
-          </h3>
-          
-          <div className="grid md:grid-cols-3 gap-6">
-            {loadingVideos ? (
-              <div>Loading career videos...</div>
-            ) : (
-              videos.map(video => (
-                <motion.div 
-                  key={video.id}
-                  whileHover={{ scale: 1.05 }}
-                  className="bg-gray-100 rounded-lg overflow-hidden shadow-md"
-                >
-                  <img 
-                    src={video.thumbnailUrl} 
-                    alt={video.title} 
-                    className="w-full h-48 object-cover"
-                  />
-                  <div className="p-4">
-                    <h4 className="font-medium text-sm mb-2 line-clamp-2">
-                      {video.title}
-                    </h4>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => window.open(video.videoUrl, '_blank')}
-                    >
-                      <PlayIcon className="mr-2 h-4 w-4" /> Watch Video
-                    </Button>
-                  </div>
-                </motion.div>
-              ))
-            )}
-          </div>
-        </motion.div>
-      )}
     </div>
   );
 };

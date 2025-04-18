@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -7,7 +8,7 @@ import Settings from "./pages/Settings";
 import Results from "./pages/Results";
 import { Toaster } from "./components/ui/toaster";
 import { AuthProvider } from "./context/AuthContext";
-import CareerExplorer from "./components/CareerExplorer";
+import CareerDetail from "./pages/CareerDetail";
 
 function App() {
   return (
@@ -20,7 +21,7 @@ function App() {
           <Route path="/profile/edit" element={<EditProfile />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/results" element={<Results />} />
-          <Route path="/careers" element={<CareerExplorer />} />
+          <Route path="/career/:categoryTitle/:careerTitle?" element={<CareerDetail />} />
         </Routes>
         <Toaster />
       </AuthProvider>
