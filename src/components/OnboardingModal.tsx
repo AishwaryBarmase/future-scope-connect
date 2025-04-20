@@ -79,27 +79,24 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ open, onOpenChange })
     setLoading(true);
     try {
       // Update user metadata in Supabase
-      const metadataJson = JSON.stringify({
-        age: formData.age,
-        gender: formData.gender,
-        location: formData.location,
-        highestEducation: formData.highestEducation,
-        fieldOfStudy: formData.fieldOfStudy,
-        employmentStatus: formData.employmentStatus,
-        workExperience: formData.workExperience,
-        currentRole: formData.currentRole,
-        careerInterests: formData.careerInterests,
-        skills: formData.skills,
-        workStyle: formData.workStyle,
-        workEnvironment: formData.workEnvironment,
-        careerValues: formData.careerValues,
-      });
-      
       const { error } = await supabase
         .from('profiles')
         .update({
-          // Store onboarding data as a JSON object in the metadata field
-          metadata: metadataJson,
+          metadata: JSON.stringify({
+            age: formData.age,
+            gender: formData.gender,
+            location: formData.location,
+            highestEducation: formData.highestEducation,
+            fieldOfStudy: formData.fieldOfStudy,
+            employmentStatus: formData.employmentStatus,
+            workExperience: formData.workExperience,
+            currentRole: formData.currentRole,
+            careerInterests: formData.careerInterests,
+            skills: formData.skills,
+            workStyle: formData.workStyle,
+            workEnvironment: formData.workEnvironment,
+            careerValues: formData.careerValues,
+          }),
           // Mark onboarding as completed
           onboarding_completed: true
         })
@@ -107,13 +104,13 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ open, onOpenChange })
 
       if (error) throw error;
       
+      // Refresh the user profile
+      await refreshProfile();
+      
       toast({
         title: "Profile updated!",
         description: "Your profile information has been saved successfully.",
       });
-      
-      // Refresh the user profile
-      await refreshProfile();
       
       // Close the modal
       onOpenChange(false);
