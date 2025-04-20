@@ -1,366 +1,434 @@
 
-import { useState, useEffect } from "react";
-import { supabase } from "../integrations/supabase/client";
-import { useAuth } from "@/context/AuthContext";
-import { Navigate } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
-import { useForm } from "react-hook-form";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const EditProfile = () => {
-  const { user, profile, loading, refreshProfile } = useAuth();
-  const [uploading, setUploading] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [resumeUrl, setResumeUrl] = useState<string | null>(null);
-  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
-
-  const form = useForm({
-    defaultValues: {
-      fullName: "",
-      email: "",
-      dob: new Date(),
-      address: "",
-    },
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    full_name: '',
+    avatar_url: '',
+    
+    // Demographics & Background
+    age: '',
+    gender: '',
+    location: '',
+    highestEducation: '',
+    fieldOfStudy: '',
+    
+    // Current Status & Experience
+    employmentStatus: '',
+    workExperience: '',
+    currentRole: '',
+    
+    // Interests & Skills
+    careerInterests: '',
+    skills: '',
+    
+    // Personality & Work Preferences
+    workStyle: '',
+    workEnvironment: '',
+    careerValues: '',
   });
 
   useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
     if (profile) {
-      form.reset({
-        fullName: profile.full_name || "",
-        email: user?.email || "",
-        dob: profile.date_of_birth ? new Date(profile.date_of_birth) : new Date(),
-        address: profile.address || "",
-      });
-      setAvatarUrl(profile.avatar_url);
-      setResumeUrl(profile.resume_url);
+      const profileData = {
+        full_name: profile.full_name || '',
+        avatar_url: profile.avatar_url || '',
+      };
+
+      // Try to parse metadata
+      try {
+        const metadata = typeof profile.metadata === 'string' 
+          ? JSON.parse(profile.metadata || '{}') 
+          : profile.metadata || {};
+        
+        setFormData({
+          ...profileData,
+          age: metadata.age || '',
+          gender: metadata.gender || '',
+          location: metadata.location || '',
+          highestEducation: metadata.highestEducation || '',
+          fieldOfStudy: metadata.fieldOfStudy || '',
+          employmentStatus: metadata.employmentStatus || '',
+          workExperience: metadata.workExperience || '',
+          currentRole: metadata.currentRole || '',
+          careerInterests: metadata.careerInterests || '',
+          skills: metadata.skills || '',
+          workStyle: metadata.workStyle || '',
+          workEnvironment: metadata.workEnvironment || '',
+          careerValues: metadata.careerValues || '',
+        });
+      } catch (error) {
+        console.error("Error parsing profile metadata:", error);
+        setFormData(profileData);
+      }
     }
-  }, [profile, user]);
+  }, [user, profile, navigate]);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <p>Loading...</p>
-      </div>
-    );
-  }
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
-  if (!user) {
-    return <Navigate to="/login" />;
-  }
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
-  async function uploadAvatar(event: React.ChangeEvent<HTMLInputElement>) {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!user) return;
+    
+    setLoading(true);
     try {
-      setUploading(true);
-
-      if (!event.target.files || event.target.files.length === 0) {
-        throw new Error("You must select an image to upload.");
-      }
-
-      const file = event.target.files[0];
-      const fileExt = file.name.split(".").pop();
-      const filePath = `${user.id}/avatar.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("profiles")
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) {
-        throw uploadError;
-      }
-
-      const { data } = supabase.storage.from("profiles").getPublicUrl(filePath);
-      
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({ avatar_url: data.publicUrl })
-        .eq("id", user.id);
-
-      if (updateError) {
-        throw updateError;
-      }
-
-      setAvatarUrl(data.publicUrl);
-      await refreshProfile();
-      
-      toast({
-        title: "Success!",
-        description: "Avatar updated successfully.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error uploading avatar",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  async function uploadResume(event: React.ChangeEvent<HTMLInputElement>) {
-    try {
-      if (!event.target.files || event.target.files.length === 0) {
-        throw new Error("You must select a file to upload.");
-      }
-
-      const file = event.target.files[0];
-      setResumeFile(file);
-
-      // Display the selected file name
-      const fileNameParts = file.name.split(".");
-      const fileExt = fileNameParts.pop();
-      const fileName = fileNameParts.join(".");
-      
-      toast({
-        title: "File selected",
-        description: `${fileName}.${fileExt} (will be uploaded on save)`,
-      });
-
-    } catch (error: any) {
-      toast({
-        title: "Error selecting file",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  }
-
-  async function handleSubmit(data: any) {
-    try {
-      setUploading(true);
-      let updatedResumeUrl = resumeUrl;
-
-      // Upload resume if a new file was selected
-      if (resumeFile) {
-        const fileExt = resumeFile.name.split(".").pop();
-        const filePath = `${user.id}/resume.${fileExt}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("profiles")
-          .upload(filePath, resumeFile, { upsert: true });
-
-        if (uploadError) {
-          throw uploadError;
-        }
-
-        const { data: fileData } = supabase.storage.from("profiles").getPublicUrl(filePath);
-        updatedResumeUrl = fileData.publicUrl;
-      }
-
-      // Update profile
       const { error } = await supabase
-        .from("profiles")
+        .from('profiles')
         .update({
-          full_name: data.fullName,
-          date_of_birth: data.dob ? format(data.dob, "yyyy-MM-dd") : null,
-          address: data.address,
-          resume_url: updatedResumeUrl,
+          full_name: formData.full_name,
+          avatar_url: formData.avatar_url,
+          metadata: JSON.stringify({
+            age: formData.age,
+            gender: formData.gender,
+            location: formData.location,
+            highestEducation: formData.highestEducation,
+            fieldOfStudy: formData.fieldOfStudy,
+            employmentStatus: formData.employmentStatus,
+            workExperience: formData.workExperience,
+            currentRole: formData.currentRole,
+            careerInterests: formData.careerInterests,
+            skills: formData.skills,
+            workStyle: formData.workStyle,
+            workEnvironment: formData.workEnvironment,
+            careerValues: formData.careerValues,
+          }),
+          // Ensure onboarding is marked as completed
+          onboarding_completed: true
         })
-        .eq("id", user.id);
+        .eq('id', user.id);
 
-      if (error) {
-        throw error;
-      }
-
+      if (error) throw error;
+      
       await refreshProfile();
-
+      
       toast({
-        title: "Success!",
-        description: "Profile updated successfully.",
+        title: "Profile updated!",
+        description: "Your profile information has been saved successfully.",
       });
+      
+      navigate('/dashboard');
     } catch (error: any) {
       toast({
         title: "Error updating profile",
-        description: error.message,
+        description: error.message || "There was a problem updating your profile.",
         variant: "destructive",
       });
     } finally {
-      setUploading(false);
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-white via-blue-50 to-purple-50">
       <Header />
-      <main className="flex-grow pt-24 pb-16">
-        <div className="container mx-auto px-4 max-w-3xl">
-          <h1 className="text-3xl font-bold mb-8">Edit Profile</h1>
-
-          <div className="bg-white shadow-md rounded-lg p-6 mb-8">
-            <div className="flex flex-col items-center mb-8">
-              <Avatar className="h-32 w-32">
-                <AvatarImage src={avatarUrl || undefined} />
-                <AvatarFallback className="text-2xl">
-                  {profile?.full_name
-                    ? profile.full_name
-                        .split(" ")
-                        .map((n: string) => n[0])
-                        .join("")
-                        .toUpperCase()
-                        .substring(0, 2)
-                    : user?.email?.charAt(0).toUpperCase() || "U"}
-                </AvatarFallback>
-              </Avatar>
-              
-              <div className="mt-4">
-                <label className="block mb-2 text-sm font-medium text-gray-900">
-                  Profile Photo
-                </label>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={uploadAvatar}
-                  disabled={uploading}
-                  id="avatar"
-                  className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  JPG, PNG or GIF (max. 5MB)
-                </p>
-              </div>
-            </div>
-
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="fullName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Full Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="John Doe" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="john@example.com" {...field} disabled />
-                      </FormControl>
-                      <p className="text-sm text-muted-foreground">
-                        Email address cannot be changed.
-                      </p>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="dob"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Date of Birth</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) =>
-                              date > new Date() || date < new Date("1900-01-01")
-                            }
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Address</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder="Your address" className="resize-none" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-900">
-                    Resume / CV
-                  </label>
-                  {resumeUrl && (
-                    <div className="flex items-center gap-2 mb-2">
-                      <a
-                        href={resumeUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:underline"
-                      >
-                        Current Resume
-                      </a>
+      <main className="flex-grow pt-20 pb-12">
+        <div className="container mx-auto px-4 py-12">
+          <h1 className="text-3xl font-bold mb-8 gradient-text">Edit Profile</h1>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Your Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold">Basic Information</h2>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="full_name">Full Name</Label>
+                      <Input 
+                        id="full_name" 
+                        name="full_name" 
+                        value={formData.full_name} 
+                        onChange={handleInputChange} 
+                        placeholder="Your full name" 
+                      />
                     </div>
-                  )}
-                  <Input
-                    type="file"
-                    accept=".pdf,.doc,.docx"
-                    onChange={uploadResume}
-                    className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    PDF, DOC, or DOCX (max. 10MB)
-                  </p>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="avatar_url">Profile Picture URL</Label>
+                      <Input 
+                        id="avatar_url" 
+                        name="avatar_url" 
+                        value={formData.avatar_url} 
+                        onChange={handleInputChange} 
+                        placeholder="https://example.com/avatar.jpg" 
+                      />
+                    </div>
+                  </div>
                 </div>
-                
-                <Button type="submit" className="w-full" disabled={uploading}>
-                  {uploading ? "Updating..." : "Save Changes"}
-                </Button>
+
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold">Demographics & Background</h2>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="age">Age</Label>
+                      <Input 
+                        id="age" 
+                        name="age" 
+                        value={formData.age} 
+                        onChange={handleInputChange} 
+                        placeholder="Your age" 
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="gender">Gender</Label>
+                      <Select 
+                        value={formData.gender} 
+                        onValueChange={(value) => handleSelectChange('gender', value)}
+                      >
+                        <SelectTrigger id="gender">
+                          <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="male">Male</SelectItem>
+                          <SelectItem value="female">Female</SelectItem>
+                          <SelectItem value="non-binary">Non-binary</SelectItem>
+                          <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="location">Location (City/Region)</Label>
+                    <Input 
+                      id="location" 
+                      name="location" 
+                      value={formData.location} 
+                      onChange={handleInputChange} 
+                      placeholder="Your city or region" 
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="highestEducation">Highest Education Level</Label>
+                      <Select 
+                        value={formData.highestEducation} 
+                        onValueChange={(value) => handleSelectChange('highestEducation', value)}
+                      >
+                        <SelectTrigger id="highestEducation">
+                          <SelectValue placeholder="Select education level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="high-school">High School</SelectItem>
+                          <SelectItem value="some-college">Some College</SelectItem>
+                          <SelectItem value="associate">Associate's Degree</SelectItem>
+                          <SelectItem value="bachelor">Bachelor's Degree</SelectItem>
+                          <SelectItem value="master">Master's Degree</SelectItem>
+                          <SelectItem value="doctorate">Doctorate</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="fieldOfStudy">Field of Study</Label>
+                      <Input 
+                        id="fieldOfStudy" 
+                        name="fieldOfStudy" 
+                        value={formData.fieldOfStudy} 
+                        onChange={handleInputChange} 
+                        placeholder="Your major or field of study" 
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold">Current Status & Experience</h2>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="employmentStatus">Current Status</Label>
+                      <Select 
+                        value={formData.employmentStatus} 
+                        onValueChange={(value) => handleSelectChange('employmentStatus', value)}
+                      >
+                        <SelectTrigger id="employmentStatus">
+                          <SelectValue placeholder="Select your current status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="student">Student</SelectItem>
+                          <SelectItem value="employed">Employed</SelectItem>
+                          <SelectItem value="self-employed">Self-Employed</SelectItem>
+                          <SelectItem value="unemployed">Unemployed</SelectItem>
+                          <SelectItem value="retired">Retired</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="workExperience">Work Experience</Label>
+                      <Select 
+                        value={formData.workExperience} 
+                        onValueChange={(value) => handleSelectChange('workExperience', value)}
+                      >
+                        <SelectTrigger id="workExperience">
+                          <SelectValue placeholder="Select your experience level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="no-experience">No Experience</SelectItem>
+                          <SelectItem value="0-1">Less than 1 year</SelectItem>
+                          <SelectItem value="1-3">1-3 years</SelectItem>
+                          <SelectItem value="3-5">3-5 years</SelectItem>
+                          <SelectItem value="5-10">5-10 years</SelectItem>
+                          <SelectItem value="10+">10+ years</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="currentRole">Current Role</Label>
+                    <Input 
+                      id="currentRole" 
+                      name="currentRole" 
+                      value={formData.currentRole} 
+                      onChange={handleInputChange} 
+                      placeholder="Your current job title/role" 
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold">Interests & Skills</h2>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="careerInterests">Career Interests</Label>
+                    <Textarea 
+                      id="careerInterests" 
+                      name="careerInterests" 
+                      value={formData.careerInterests} 
+                      onChange={handleInputChange} 
+                      placeholder="What career fields are you interested in? (e.g., Technology, Healthcare, Arts)" 
+                      className="min-h-[100px]"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="skills">Skills & Strengths</Label>
+                    <Textarea 
+                      id="skills" 
+                      name="skills" 
+                      value={formData.skills} 
+                      onChange={handleInputChange} 
+                      placeholder="What skills and strengths do you possess? (e.g., Communication, Problem-solving, Programming)" 
+                      className="min-h-[100px]"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold">Work Preferences</h2>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="workStyle">Work Style</Label>
+                      <Select 
+                        value={formData.workStyle} 
+                        onValueChange={(value) => handleSelectChange('workStyle', value)}
+                      >
+                        <SelectTrigger id="workStyle">
+                          <SelectValue placeholder="Select your preferred work style" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="independent">Independent work</SelectItem>
+                          <SelectItem value="collaborative">Collaborative work</SelectItem>
+                          <SelectItem value="mix">Mix of both</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="workEnvironment">Work Environment</Label>
+                      <Select 
+                        value={formData.workEnvironment} 
+                        onValueChange={(value) => handleSelectChange('workEnvironment', value)}
+                      >
+                        <SelectTrigger id="workEnvironment">
+                          <SelectValue placeholder="Select your preferred environment" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="office">Traditional office</SelectItem>
+                          <SelectItem value="remote">Remote work</SelectItem>
+                          <SelectItem value="hybrid">Hybrid</SelectItem>
+                          <SelectItem value="outdoor">Outdoor/Field work</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="careerValues">Career Values</Label>
+                    <Textarea 
+                      id="careerValues" 
+                      name="careerValues" 
+                      value={formData.careerValues} 
+                      onChange={handleInputChange} 
+                      placeholder="What do you value most in a career? (e.g., Work-life balance, Growth opportunities, Social impact)" 
+                      className="min-h-[100px]"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-4 flex justify-end space-x-4">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => navigate('/dashboard')}
+                    disabled={loading}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={loading}
+                  >
+                    {loading ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </div>
               </form>
-            </Form>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </main>
       <Footer />

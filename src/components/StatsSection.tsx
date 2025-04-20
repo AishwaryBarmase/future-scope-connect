@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const StatsItem = ({ label, value, suffix = "", prefix = "" }: { label: string, value: number, suffix?: string, prefix?: string }) => {
   const [count, setCount] = useState(0);
@@ -46,6 +47,61 @@ const StatsItem = ({ label, value, suffix = "", prefix = "" }: { label: string, 
 };
 
 const StatsSection = () => {
+  const [stats, setStats] = useState({
+    users: 0,
+    activeUsers: 0,
+    careerPaths: 0,
+    testsCompleted: 0
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        // Fetch total users count
+        const { count: usersCount, error: usersError } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true });
+
+        // Fetch active users (users active in the last 24 hours)
+        const oneDayAgo = new Date();
+        oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+        
+        const { count: activeCount, error: activeError } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .gt('last_sign_in_at', oneDayAgo.toISOString());
+
+        // Fetch career paths count
+        const { count: careerPathsCount, error: careerError } = await supabase
+          .from('career_options')
+          .select('*', { count: 'exact', head: true });
+
+        // Fetch total tests completed count
+        const { count: testsCount, error: testsError } = await supabase
+          .from('quiz_results')
+          .select('*', { count: 'exact', head: true });
+
+        setStats({
+          users: usersCount || 0,
+          activeUsers: activeCount || 0,
+          careerPaths: careerPathsCount || 0,
+          testsCompleted: testsCount || 0
+        });
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+        // Fallback to default stats if there's an error
+        setStats({
+          users: 500,
+          activeUsers: 120,
+          careerPaths: 250,
+          testsCompleted: 1500
+        });
+      }
+    };
+
+    fetchStats();
+  }, []);
+
   return (
     <section className="py-20 hero-gradient">
       <div className="container mx-auto px-4">
@@ -57,10 +113,10 @@ const StatsSection = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          <StatsItem label="Active Users" value={10000} suffix="+" />
-          <StatsItem label="Career Paths" value={250} suffix="+" />
-          <StatsItem label="Career Transitions" value={4500} suffix="+" />
-          <StatsItem label="Satisfaction Rate" value={96} suffix="%" />
+          <StatsItem label="Registered Users" value={stats.users} suffix="+" />
+          <StatsItem label="Active Users" value={stats.activeUsers} suffix="+" />
+          <StatsItem label="Career Paths" value={stats.careerPaths} suffix="+" />
+          <StatsItem label="Tests Completed" value={stats.testsCompleted} suffix="+" />
         </div>
       </div>
     </section>

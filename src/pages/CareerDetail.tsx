@@ -47,8 +47,25 @@ const CareerDetail = () => {
 
   useEffect(() => {
     const fetchContent = async () => {
-      const content = await fetchCourseraContent(searchQuery);
-      setCourseraContent(content);
+      try {
+        const content = await fetchCourseraContent(searchQuery);
+        setCourseraContent(content);
+      } catch (error) {
+        console.error("Error fetching Coursera content:", error);
+        // Provide fallback content in case of API error
+        setCourseraContent({
+          courses: [
+            { name: "Introduction to the Field", partner: "FutureScope University", link: "https://www.coursera.org" },
+            { name: "Fundamentals and Best Practices", partner: "Career Academy", link: "https://www.coursera.org" },
+            { name: "Advanced Skills Development", partner: "Professional Institute", link: "https://www.coursera.org" }
+          ],
+          articles: [
+            { title: "Getting Started in Your Career", link: "https://www.coursera.org" },
+            { title: "Industry Trends and Insights", link: "https://www.coursera.org" },
+            { title: "Skills That Will Make You Stand Out", link: "https://www.coursera.org" }
+          ]
+        });
+      }
     };
     
     fetchContent();
@@ -57,6 +74,10 @@ const CareerDetail = () => {
   if (loadingOptions) {
     return <div className="text-center py-20 min-h-screen">Loading career information...</div>;
   }
+
+  // Split videos into two rows
+  const firstRowVideos = videos.slice(0, 3);
+  const secondRowVideos = videos.slice(3, 6);
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-white via-blue-50 to-purple-50">
@@ -105,16 +126,16 @@ const CareerDetail = () => {
             )}
           </motion.div>
 
-          {/* YouTube Videos Section */}
-          <section className="mb-12">
+          {/* YouTube Videos Section - First Row */}
+          <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-6">Career Guide Videos</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-3 gap-6">
               {loadingVideos ? (
                 <div className="col-span-full text-center py-8">Loading videos...</div>
-              ) : videos.length === 0 ? (
+              ) : firstRowVideos.length === 0 ? (
                 <div className="col-span-full text-center py-8">No videos found</div>
               ) : (
-                videos.map(video => (
+                firstRowVideos.map(video => (
                   <motion.div 
                     key={video.id}
                     whileHover={{ scale: 1.02 }}
@@ -139,6 +160,37 @@ const CareerDetail = () => {
               )}
             </div>
           </section>
+
+          {/* YouTube Videos Section - Second Row (Playlists) */}
+          {secondRowVideos.length > 0 && (
+            <section className="mb-12">
+              <h2 className="text-2xl font-semibold mb-6">Related Playlists</h2>
+              <div className="grid md:grid-cols-3 gap-6">
+                {secondRowVideos.map(video => (
+                  <motion.div 
+                    key={video.id}
+                    whileHover={{ scale: 1.02 }}
+                    className="bg-white rounded-lg overflow-hidden shadow-md"
+                  >
+                    <div className="aspect-video">
+                      <iframe
+                        src={video.videoUrl}
+                        title={video.title}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="w-full h-full"
+                      />
+                    </div>
+                    <div className="p-4">
+                      <h4 className="font-medium text-sm line-clamp-2 h-10">
+                        {video.title}
+                      </h4>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Course Recommendations Section */}
           <section className="mb-12">

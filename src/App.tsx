@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -22,7 +23,7 @@ function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/results" element={<Results />} />
           <Route path="/career/:categoryTitle/:careerTitle?" element={<CareerDetail />} />
-          <Route path="/quiz2" element={<QuizComponent2 />} />
+          <Route path="/quiz" element={<QuizComponent2 />} />
         </Routes>
         <Toaster />
       </AuthProvider>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -83,9 +82,8 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ open, onOpenChange })
       const { error } = await supabase
         .from('profiles')
         .update({
-          // Store onboarding data as a JSON object in the full_name field temporarily
-          // This is a workaround until the database schema is updated with the proper fields
-          full_name: JSON.stringify({
+          // Store onboarding data as a JSON object in the metadata field
+          metadata: JSON.stringify({
             age: formData.age,
             gender: formData.gender,
             location: formData.location,
@@ -100,9 +98,8 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ open, onOpenChange })
             workEnvironment: formData.workEnvironment,
             careerValues: formData.careerValues,
           }),
-          // Set a custom field in the profile metadata to track onboarding completion
-          // We'll use the address field temporarily to store this information
-          address: 'onboarding_completed'
+          // Mark onboarding as completed
+          onboarding_completed: true
         })
         .eq('id', user.id);
 
