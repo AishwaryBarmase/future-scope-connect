@@ -76,9 +76,9 @@ const StatsSection = () => {
           .from('career_options')
           .select('*', { count: 'exact', head: true });
 
-        // Fetch total tests completed count
+        // Fetch total tests completed count - using test_history table instead of quiz_results
         const { count: testsCount, error: testsError } = await supabase
-          .from('quiz_results')
+          .from('test_history')
           .select('*', { count: 'exact', head: true });
 
         setStats({

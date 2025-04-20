@@ -79,25 +79,27 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ open, onOpenChange })
     setLoading(true);
     try {
       // Update user metadata in Supabase
+      const metadataJson = JSON.stringify({
+        age: formData.age,
+        gender: formData.gender,
+        location: formData.location,
+        highestEducation: formData.highestEducation,
+        fieldOfStudy: formData.fieldOfStudy,
+        employmentStatus: formData.employmentStatus,
+        workExperience: formData.workExperience,
+        currentRole: formData.currentRole,
+        careerInterests: formData.careerInterests,
+        skills: formData.skills,
+        workStyle: formData.workStyle,
+        workEnvironment: formData.workEnvironment,
+        careerValues: formData.careerValues,
+      });
+      
       const { error } = await supabase
         .from('profiles')
         .update({
           // Store onboarding data as a JSON object in the metadata field
-          metadata: JSON.stringify({
-            age: formData.age,
-            gender: formData.gender,
-            location: formData.location,
-            highestEducation: formData.highestEducation,
-            fieldOfStudy: formData.fieldOfStudy,
-            employmentStatus: formData.employmentStatus,
-            workExperience: formData.workExperience,
-            currentRole: formData.currentRole,
-            careerInterests: formData.careerInterests,
-            skills: formData.skills,
-            workStyle: formData.workStyle,
-            workEnvironment: formData.workEnvironment,
-            careerValues: formData.careerValues,
-          }),
+          metadata: metadataJson,
           // Mark onboarding as completed
           onboarding_completed: true
         })

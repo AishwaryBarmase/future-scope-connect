@@ -57,9 +57,23 @@ const EditProfile = () => {
     }
 
     if (profile) {
-      const profileData = {
+      // Initialize all form data fields
+      const initialFormData = {
         full_name: profile.full_name || '',
         avatar_url: profile.avatar_url || '',
+        age: '',
+        gender: '',
+        location: '',
+        highestEducation: '',
+        fieldOfStudy: '',
+        employmentStatus: '',
+        workExperience: '',
+        currentRole: '',
+        careerInterests: '',
+        skills: '',
+        workStyle: '',
+        workEnvironment: '',
+        careerValues: '',
       };
 
       // Try to parse metadata
@@ -68,25 +82,27 @@ const EditProfile = () => {
           ? JSON.parse(profile.metadata || '{}') 
           : profile.metadata || {};
         
-        setFormData({
-          ...profileData,
-          age: metadata.age || '',
-          gender: metadata.gender || '',
-          location: metadata.location || '',
-          highestEducation: metadata.highestEducation || '',
-          fieldOfStudy: metadata.fieldOfStudy || '',
-          employmentStatus: metadata.employmentStatus || '',
-          workExperience: metadata.workExperience || '',
-          currentRole: metadata.currentRole || '',
-          careerInterests: metadata.careerInterests || '',
-          skills: metadata.skills || '',
-          workStyle: metadata.workStyle || '',
-          workEnvironment: metadata.workEnvironment || '',
-          careerValues: metadata.careerValues || '',
-        });
+        // Update form data with metadata values if they exist
+        if (metadata) {
+          initialFormData.age = metadata.age || '';
+          initialFormData.gender = metadata.gender || '';
+          initialFormData.location = metadata.location || '';
+          initialFormData.highestEducation = metadata.highestEducation || '';
+          initialFormData.fieldOfStudy = metadata.fieldOfStudy || '';
+          initialFormData.employmentStatus = metadata.employmentStatus || '';
+          initialFormData.workExperience = metadata.workExperience || '';
+          initialFormData.currentRole = metadata.currentRole || '';
+          initialFormData.careerInterests = metadata.careerInterests || '';
+          initialFormData.skills = metadata.skills || '';
+          initialFormData.workStyle = metadata.workStyle || '';
+          initialFormData.workEnvironment = metadata.workEnvironment || '';
+          initialFormData.careerValues = metadata.careerValues || '';
+        }
+        
+        setFormData(initialFormData);
       } catch (error) {
         console.error("Error parsing profile metadata:", error);
-        setFormData(profileData);
+        setFormData(initialFormData);
       }
     }
   }, [user, profile, navigate]);

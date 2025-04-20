@@ -86,12 +86,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw error;
       }
 
-      // Update the last sign in timestamp
-      await supabase
-        .from('profiles')
-        .update({ last_sign_in_at: new Date().toISOString() })
-        .eq('id', userId);
-
+      // Update the last sign in timestamp - removing this as it's not in the schema
+      // Instead, just set the profile data
       setProfile(data);
     } catch (error: any) {
       console.error("Error fetching profile:", error.message);
