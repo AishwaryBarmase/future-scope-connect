@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -9,6 +8,7 @@ import Results from "./pages/Results";
 import { Toaster } from "./components/ui/toaster";
 import { AuthProvider } from "./context/AuthContext";
 import CareerDetail from "./pages/CareerDetail";
+import QuizComponent2 from "./components/QuizComponent2";
 
 function App() {
   return (
@@ -22,6 +22,7 @@ function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/results" element={<Results />} />
           <Route path="/career/:categoryTitle/:careerTitle?" element={<CareerDetail />} />
+          <Route path="/quiz2" element={<QuizComponent2 />} />
         </Routes>
         <Toaster />
       </AuthProvider>
