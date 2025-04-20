@@ -39,4 +39,3 @@ export const InterestsStep = ({ formData, onInputChange }: InterestsStepProps) =
     </div>
   );
 };
-

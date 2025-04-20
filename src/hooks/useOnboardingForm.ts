@@ -45,10 +45,15 @@ export const useOnboardingForm = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  // Convert formData to a Record<string, any> for compatibility with Json type
+  const getMetadataObject = (): Record<string, any> => {
+    return { ...formData };
+  };
+
   return {
     formData,
     handleInputChange,
     handleSelectChange,
+    getMetadataObject
   };
 };
-

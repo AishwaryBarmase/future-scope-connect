@@ -10,13 +10,36 @@ export const calculateCosineSimilarity = (vectorA: number[], vectorB: number[]):
 };
 
 export const convertResponsesToVector = (responses: Record<string, string>): number[] => {
-  const vector = new Array(90).fill(0); // 15 questions * 6 options
-  Object.entries(responses).forEach(([questionId, answerId]) => {
-    const questionIndex = parseInt(questionId.slice(1)) - 1;
-    const optionIndex = answerId.charAt(answerId.length - 1).charCodeAt(0) - 97;
-    vector[questionIndex * 6 + optionIndex] = 1;
-  });
-  return vector;
+  // Check if we're dealing with the career matching quiz (starts with Q) or the aptitude quiz
+  if (Object.keys(responses)[0]?.startsWith('Q')) {
+    // Career matching quiz format
+    const vector = new Array(90).fill(0); // 15 questions * 6 options
+    
+    Object.entries(responses).forEach(([questionId, answerId]) => {
+      // Extract the question number (e.g., 'Q1' -> 1)
+      const questionNumber = parseInt(questionId.slice(1)) - 1;
+      
+      // Extract the option letter (e.g., 'Q1-a' -> 'a')
+      const optionLetter = answerId.slice(-1);
+      
+      // Convert option letter to index (a=0, b=1, c=2, etc.)
+      const optionIndex = optionLetter.charCodeAt(0) - 97; // 'a' is 97 in ASCII
+      
+      // Set the vector value
+      vector[questionNumber * 6 + optionIndex] = 1;
+    });
+    
+    return vector;
+  } else {
+    // Original aptitude quiz format
+    const vector = new Array(90).fill(0); // 15 questions * 6 options
+    Object.entries(responses).forEach(([questionId, answerId]) => {
+      const questionIndex = parseInt(questionId.slice(1)) - 1;
+      const optionIndex = answerId.charAt(answerId.length - 1).charCodeAt(0) - 97;
+      vector[questionIndex * 6 + optionIndex] = 1;
+    });
+    return vector;
+  }
 };
 
 export const getCareerMatches = async (userVector: number[]): Promise<CareerMatchResult[]> => {

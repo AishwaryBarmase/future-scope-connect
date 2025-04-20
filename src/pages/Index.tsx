@@ -27,7 +27,7 @@ const Index = () => {
     const redirectToQuiz = sessionStorage.getItem('redirectToQuiz');
     if (redirectToQuiz === 'true' && user) {
       sessionStorage.removeItem('redirectToQuiz');
-      navigate('/quiz');
+      navigate('/quiz-selection');
     }
   }, [user, navigate]);
 
@@ -43,8 +43,7 @@ const Index = () => {
   // Handler for the "Find your Path" button
   const handleFindYourPathClick = () => {
     if (user) {
-      console.log("Starting quiz for user:", user.id);
-      navigate('/quiz');
+      navigate('/quiz-selection');
     } else {
       setShowLoginPrompt(true);
       // Store intention to take quiz after login

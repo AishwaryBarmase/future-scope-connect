@@ -10,6 +10,8 @@ import { Toaster } from "./components/ui/toaster";
 import { AuthProvider } from "./context/AuthContext";
 import CareerDetail from "./pages/CareerDetail";
 import QuizComponent2 from "./components/QuizComponent2";
+import CareerMatchingQuiz from "./components/CareerMatchingQuiz";
+import QuizSelection from "./components/QuizSelection";
 
 function App() {
   return (
@@ -23,7 +25,9 @@ function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/results" element={<Results />} />
           <Route path="/career/:categoryTitle/:careerTitle?" element={<CareerDetail />} />
+          <Route path="/quiz-selection" element={<QuizSelection />} />
           <Route path="/quiz" element={<QuizComponent2 />} />
+          <Route path="/career-quiz" element={<CareerMatchingQuiz />} />
         </Routes>
         <Toaster />
       </AuthProvider>

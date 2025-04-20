@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Header from "@/components/Header";
@@ -70,8 +69,9 @@ const Results = () => {
   const [overallPerformance, setOverallPerformance] = useState<number>(0);
   const [careerSuggestions, setCareerSuggestions] = useState<any[]>([]);
   
-  // Retrieve responses from location state or fetch from database
+  // Retrieve responses and quiz type from location state
   const responses = location.state?.responses || {};
+  const quizType = location.state?.quizType || "aptitude";
   
   useEffect(() => {
     if (!user) {
@@ -83,113 +83,197 @@ const Results = () => {
       setLoading(true);
       
       try {
-        // Calculate user's scores by category
-        const userScores: ScoresData = {};
-        const categories = ['IQ', 'Personality', 'Numerical Ability', 'Memory', 'Career Interests', 'Mechanical Reasoning', 'Abstract Reasoning', 'EQ'];
+        // Store test in history
+        if (user) {
+          try {
+            const { error } = await supabase
+              .from('test_history')
+              .insert({
+                user_id: user.id,
+                responses,
+                test_type: quizType,
+                score: {} // Will be populated later
+              });
+            
+            if (error) console.error("Error saving test history:", error);
+          } catch (err) {
+            console.error("Error in test history save:", err);
+          }
+        }
         
-        // Process user responses
-        categories.forEach(category => {
-          // Get responses for this category
-          const categoryResponses = Object.keys(responses).filter(key => key.startsWith(category.substring(0, 2)));
+        // Different calculation logic based on quiz type
+        if (quizType === "career-matching") {
+          // For career matching quiz, we directly use the matches from location state
+          const matches = location.state?.careerMatches || [];
+          setCareerSuggestions(matches);
           
-          // Calculate score based on responses (simplified scoring for demonstration)
-          // In a real app, you'd have a more sophisticated scoring algorithm
-          let score = 0;
-          const correctAnswers: Record<string, string> = {
-            'IQ01': 'IQ01-2', // 49
-            'IQ02': 'IQ02-2', // AE
-            'IQ03': 'IQ03-1', // 32
-            'IQ04': 'IQ04-3', // 9
-            'IQ05': 'IQ05-2', // 715641
-            'NA01': 'NA01-2', // 18,000
-            'NA02': 'NA02-2', // 30 liters
-            'NA03': 'NA03-3', // 25%
-            'NA04': 'NA04-2', // 2250 units
-            'NA05': 'NA05-1', // -5
-            'MM01': 'MM01-3', // SKPAMGI
-            'AR01': 'AR01-1', // 🔷
-            'AR02': 'AR02-1', // Same as the start
-            'AR03': 'AR03-3', // 🔲
-            'AR04': 'AR04-2', // 9
-            'AR05': 'AR05-1', // A square with 4 dots
-            'MR01': 'MR01-2', // Counter-clockwise
-            'MR02': 'MR02-2', // Placing the fulcrum closer to you
-            'MR03': 'MR03-2', // Placing the fulcrum closer to you
-            'MR04': 'MR04-3', // Less force is required
-            'MR05': 'MR05-3', // It increases
-            'EQ01': 'EQ01-3', // Listen calmly
-            'EQ02': 'EQ02-3', // I can see this upset you
-            'EQ03': 'EQ03-4', // Have a private conversation
-            'EQ04': 'EQ04-3', // This is disappointing but I'll learn
-            'EQ05': 'EQ05-2', // Take deep breaths
+          // Generate synthetic scores based on response patterns
+          const syntheticScores: ScoresData = {
+            'Technical': 0,
+            'Creative': 0,
+            'Leadership': 0,
+            'Scientific': 0,
+            'Educational': 0,
+            'Specialized': 0
           };
           
-          categoryResponses.forEach(questionId => {
-            // Give points for correct answers (for objective questions)
-            if (correctAnswers[questionId] && responses[questionId] === correctAnswers[questionId]) {
-              score += 20; // 20 points per correct answer
+          // Count preferences from responses
+          Object.entries(responses).forEach(([qId, answer]) => {
+            const optionLetter = (answer as string).slice(-1);
+            switch(optionLetter) {
+              case 'a': syntheticScores['Technical'] += 20; break;
+              case 'b': syntheticScores['Creative'] += 20; break;
+              case 'c': syntheticScores['Leadership'] += 20; break;
+              case 'd': syntheticScores['Scientific'] += 20; break;
+              case 'e': syntheticScores['Educational'] += 20; break;
+              case 'f': syntheticScores['Specialized'] += 20; break;
             }
           });
           
-          // Calculate percentage score
-          const maxScore = categoryResponses.length * 20;
-          const percentage = maxScore > 0 ? (score / maxScore) * 100 : 0;
+          // Normalize scores to percentages
+          Object.keys(syntheticScores).forEach(key => {
+            syntheticScores[key] = Math.min(Math.round(syntheticScores[key] / 3), 100);
+          });
           
-          userScores[category] = Math.round(percentage);
-        });
-        
-        setScores(userScores);
-        
-        // Fetch average scores from other users
-        // In a real app, this would be a database query to get aggregate data
-        const mockAverageScores: ScoresData = {
-          'IQ': 65,
-          'Personality': 70,
-          'Numerical Ability': 60,
-          'Memory': 55,
-          'Career Interests': 75,
-          'Mechanical Reasoning': 58,
-          'Abstract Reasoning': 62,
-          'EQ': 68
-        };
-        
-        setAverageScores(mockAverageScores);
-        
-        // Prepare comparison data for charts
-        const compData = Object.keys(userScores).map(category => ({
-          name: category,
-          userScore: userScores[category],
-          averageScore: mockAverageScores[category],
-          fullMark: 100
-        }));
-        
-        setComparisonData(compData);
-        
-        // Calculate overall performance
-        const userTotal = Object.values(userScores).reduce((sum, score) => sum + score, 0);
-        const userAvg = userTotal / Object.values(userScores).length;
-        setOverallPerformance(Math.round(userAvg));
-        
-        // Generate career suggestions based on scores
-        // In a real app, this would use a more sophisticated algorithm
-        const mockCareers = [
-          { name: "Software Developer", match: userScores['IQ'] * 0.3 + userScores['Numerical Ability'] * 0.3 + userScores['Abstract Reasoning'] * 0.2 + userScores['Career Interests'] * 0.2 },
-          { name: "Data Scientist", match: userScores['IQ'] * 0.25 + userScores['Numerical Ability'] * 0.4 + userScores['Abstract Reasoning'] * 0.25 + userScores['EQ'] * 0.1 },
-          { name: "UX Designer", match: userScores['Abstract Reasoning'] * 0.3 + userScores['EQ'] * 0.3 + userScores['Personality'] * 0.25 + userScores['Career Interests'] * 0.15 },
-          { name: "Project Manager", match: userScores['EQ'] * 0.4 + userScores['Personality'] * 0.3 + userScores['IQ'] * 0.15 + userScores['Abstract Reasoning'] * 0.15 },
-          { name: "Mechanical Engineer", match: userScores['Mechanical Reasoning'] * 0.4 + userScores['IQ'] * 0.2 + userScores['Numerical Ability'] * 0.3 + userScores['Abstract Reasoning'] * 0.1 }
-        ];
-        
-        // Sort and format career suggestions
-        const sortedCareers = mockCareers
-          .map(career => ({ 
-            ...career, 
-            match: Math.min(Math.round(career.match / 100), 100) 
-          }))
-          .sort((a, b) => b.match - a.match)
-          .slice(0, 5);
-        
-        setCareerSuggestions(sortedCareers);
+          setScores(syntheticScores);
+          
+          // Mock average scores for comparison
+          const mockAverageScores: ScoresData = {
+            'Technical': 65,
+            'Creative': 70,
+            'Leadership': 60,
+            'Scientific': 55,
+            'Educational': 75,
+            'Specialized': 58
+          };
+          
+          setAverageScores(mockAverageScores);
+          
+          // Prepare comparison data for charts
+          const compData = Object.keys(syntheticScores).map(category => ({
+            name: category,
+            userScore: syntheticScores[category],
+            averageScore: mockAverageScores[category],
+            fullMark: 100
+          }));
+          
+          setComparisonData(compData);
+          
+          // Calculate overall performance
+          const userTotal = Object.values(syntheticScores).reduce((sum, score) => sum + score, 0);
+          const userAvg = userTotal / Object.values(syntheticScores).length;
+          setOverallPerformance(Math.round(userAvg));
+          
+        } else {
+          // Original aptitude quiz calculation
+          // Calculate user's scores by category
+          const userScores: ScoresData = {};
+          const categories = ['IQ', 'Personality', 'Numerical Ability', 'Memory', 'Career Interests', 'Mechanical Reasoning', 'Abstract Reasoning', 'EQ'];
+          
+          // Process user responses
+          categories.forEach(category => {
+            // Get responses for this category
+            const categoryResponses = Object.keys(responses).filter(key => key.startsWith(category.substring(0, 2)));
+            
+            // Calculate score based on responses (simplified scoring for demonstration)
+            // In a real app, you'd have a more sophisticated scoring algorithm
+            let score = 0;
+            const correctAnswers: Record<string, string> = {
+              'IQ01': 'IQ01-2', // 49
+              'IQ02': 'IQ02-2', // AE
+              'IQ03': 'IQ03-1', // 32
+              'IQ04': 'IQ04-3', // 9
+              'IQ05': 'IQ05-2', // 715641
+              'NA01': 'NA01-2', // 18,000
+              'NA02': 'NA02-2', // 30 liters
+              'NA03': 'NA03-3', // 25%
+              'NA04': 'NA04-2', // 2250 units
+              'NA05': 'NA05-1', // -5
+              'MM01': 'MM01-3', // SKPAMGI
+              'AR01': 'AR01-1', // 🔷
+              'AR02': 'AR02-1', // Same as the start
+              'AR03': 'AR03-3', // 🔲
+              'AR04': 'AR04-2', // 9
+              'AR05': 'AR05-1', // A square with 4 dots
+              'MR01': 'MR01-2', // Counter-clockwise
+              'MR02': 'MR02-2', // Placing the fulcrum closer to you
+              'MR03': 'MR03-2', // Placing the fulcrum closer to you
+              'MR04': 'MR04-3', // Less force is required
+              'MR05': 'MR05-3', // It increases
+              'EQ01': 'EQ01-3', // Listen calmly
+              'EQ02': 'EQ02-3', // I can see this upset you
+              'EQ03': 'EQ03-4', // Have a private conversation
+              'EQ04': 'EQ04-3', // This is disappointing but I'll learn
+              'EQ05': 'EQ05-2', // Take deep breaths
+            };
+            
+            categoryResponses.forEach(questionId => {
+              // Give points for correct answers (for objective questions)
+              if (correctAnswers[questionId] && responses[questionId] === correctAnswers[questionId]) {
+                score += 20; // 20 points per correct answer
+              }
+            });
+            
+            // Calculate percentage score
+            const maxScore = categoryResponses.length * 20;
+            const percentage = maxScore > 0 ? (score / maxScore) * 100 : 0;
+            
+            userScores[category] = Math.round(percentage);
+          });
+          
+          setScores(userScores);
+          
+          // Fetch average scores from other users
+          // In a real app, this would be a database query to get aggregate data
+          const mockAverageScores: ScoresData = {
+            'IQ': 65,
+            'Personality': 70,
+            'Numerical Ability': 60,
+            'Memory': 55,
+            'Career Interests': 75,
+            'Mechanical Reasoning': 58,
+            'Abstract Reasoning': 62,
+            'EQ': 68
+          };
+          
+          setAverageScores(mockAverageScores);
+          
+          // Prepare comparison data for charts
+          const compData = Object.keys(userScores).map(category => ({
+            name: category,
+            userScore: userScores[category],
+            averageScore: mockAverageScores[category],
+            fullMark: 100
+          }));
+          
+          setComparisonData(compData);
+          
+          // Calculate overall performance
+          const userTotal = Object.values(userScores).reduce((sum, score) => sum + score, 0);
+          const userAvg = userTotal / Object.values(userScores).length;
+          setOverallPerformance(Math.round(userAvg));
+          
+          // Generate career suggestions based on scores
+          // In a real app, this would use a more sophisticated algorithm
+          const mockCareers = [
+            { name: "Software Developer", match: userScores['IQ'] * 0.3 + userScores['Numerical Ability'] * 0.3 + userScores['Abstract Reasoning'] * 0.2 + userScores['Career Interests'] * 0.2 },
+            { name: "Data Scientist", match: userScores['IQ'] * 0.25 + userScores['Numerical Ability'] * 0.4 + userScores['Abstract Reasoning'] * 0.25 + userScores['EQ'] * 0.1 },
+            { name: "UX Designer", match: userScores['Abstract Reasoning'] * 0.3 + userScores['EQ'] * 0.3 + userScores['Personality'] * 0.25 + userScores['Career Interests'] * 0.15 },
+            { name: "Project Manager", match: userScores['EQ'] * 0.4 + userScores['Personality'] * 0.3 + userScores['IQ'] * 0.15 + userScores['Abstract Reasoning'] * 0.15 },
+            { name: "Mechanical Engineer", match: userScores['Mechanical Reasoning'] * 0.4 + userScores['IQ'] * 0.2 + userScores['Numerical Ability'] * 0.3 + userScores['Abstract Reasoning'] * 0.1 }
+          ];
+          
+          // Sort and format career suggestions
+          const sortedCareers = mockCareers
+            .map(career => ({ 
+              ...career, 
+              match: Math.min(Math.round(career.match / 100), 100) 
+            }))
+            .sort((a, b) => b.match - a.match)
+            .slice(0, 5);
+          
+          setCareerSuggestions(sortedCareers);
+        }
         
       } catch (error) {
         console.error("Error calculating results:", error);
@@ -199,7 +283,7 @@ const Results = () => {
     };
     
     calculateScores();
-  }, [user, navigate, responses]);
+  }, [user, navigate, responses, quizType]);
   
   if (loading) {
     return (
@@ -225,7 +309,9 @@ const Results = () => {
             
             {/* Header Section */}
             <div className="mb-10 text-center">
-              <h1 className="text-3xl md:text-4xl font-bold mb-4">Your Assessment Results</h1>
+              <h1 className="text-3xl md:text-4xl font-bold mb-4">
+                {quizType === "career-matching" ? "Career Matching Results" : "Aptitude Assessment Results"}
+              </h1>
               <p className="text-lg text-gray-600 max-w-3xl mx-auto">
                 We've analyzed your responses and compiled a comprehensive assessment of your skills, 
                 aptitudes, and potential career matches.
