@@ -115,6 +115,8 @@ export type Database = {
           date_of_birth: string | null
           full_name: string | null
           id: string
+          metadata: Json | null
+          onboarding_completed: boolean | null
           resume_url: string | null
           updated_at: string
         }
@@ -125,6 +127,8 @@ export type Database = {
           date_of_birth?: string | null
           full_name?: string | null
           id: string
+          metadata?: Json | null
+          onboarding_completed?: boolean | null
           resume_url?: string | null
           updated_at?: string
         }
@@ -135,6 +139,8 @@ export type Database = {
           date_of_birth?: string | null
           full_name?: string | null
           id?: string
+          metadata?: Json | null
+          onboarding_completed?: boolean | null
           resume_url?: string | null
           updated_at?: string
         }

@@ -78,11 +78,10 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ open, onOpenChange })
     
     setLoading(true);
     try {
-      // Update user metadata in Supabase
       const { error } = await supabase
         .from('profiles')
         .update({
-          metadata: JSON.stringify({
+          metadata: {
             age: formData.age,
             gender: formData.gender,
             location: formData.location,
@@ -96,7 +95,7 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ open, onOpenChange })
             workStyle: formData.workStyle,
             workEnvironment: formData.workEnvironment,
             careerValues: formData.careerValues,
-          }),
+          },
           // Mark onboarding as completed
           onboarding_completed: true
         })
