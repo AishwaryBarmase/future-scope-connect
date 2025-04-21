@@ -7,9 +7,10 @@ import { formatDistanceToNow } from 'date-fns';
 
 interface TestHistoryProps {
   testHistory: any[];
+  isLoading?: boolean;
 }
 
-const TestHistory: React.FC<TestHistoryProps> = ({ testHistory }) => {
+const TestHistory: React.FC<TestHistoryProps> = ({ testHistory, isLoading = false }) => {
   const navigate = useNavigate();
 
   const handleViewDetails = (test: any) => {
@@ -32,6 +33,15 @@ const TestHistory: React.FC<TestHistoryProps> = ({ testHistory }) => {
         return type.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="bg-white shadow-md rounded-lg p-6 mb-8">
+        <h2 className="text-xl font-semibold mb-4">Test History</h2>
+        <p className="text-gray-600">Loading your test history...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white shadow-md rounded-lg p-6 mb-8">
