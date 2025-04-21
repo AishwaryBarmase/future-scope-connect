@@ -1,25 +1,48 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { quizQuestions } from '../data/quizQuestions';
-import { convertResponsesToVector, getCareerMatches } from '../utils/careerVectorUtils';
+import { quizQuestions2 } from '../data/quizQuestions2';
+import { convertResponsesToVector, processAptitudeResults } from '../utils/careerVectorUtils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from '../hooks/use-toast';
+import { Clock } from 'lucide-react';
 
 const QuizComponent2 = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userResponses, setUserResponses] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showQuitDialog, setShowQuitDialog] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(15 * 60); // 15 minutes in seconds
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // We now use the quizQuestions array which contains all 15 aptitude questions
-  const currentQuestion = quizQuestions[currentQuestionIndex];
-  const progress = ((currentQuestionIndex + 1) / quizQuestions.length) * 100;
+  // We now use the quizQuestions2 array which contains all aptitude questions
+  const currentQuestion = quizQuestions2[currentQuestionIndex];
+  const progress = ((currentQuestionIndex + 1) / quizQuestions2.length) * 100;
+
+  // Timer effect
+  useEffect(() => {
+    if (timeRemaining <= 0) {
+      handleSubmit();
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setTimeRemaining(prev => prev - 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timeRemaining]);
+
+  // Format time as mm:ss
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const handleOptionSelect = (questionId: string, optionId: string) => {
     setUserResponses(prev => ({
@@ -38,7 +61,7 @@ const QuizComponent2 = () => {
       return;
     }
 
-    if (currentQuestionIndex === quizQuestions.length - 1) {
+    if (currentQuestionIndex === quizQuestions2.length - 1) {
       await handleSubmit();
     } else {
       setCurrentQuestionIndex(prev => prev + 1);
@@ -80,8 +103,14 @@ const QuizComponent2 = () => {
         <Button variant="ghost" onClick={handleQuit}>
           Cancel
         </Button>
+        <div className="flex items-center space-x-2">
+          <Clock className="h-4 w-4 text-primary" />
+          <span className="text-sm font-medium text-primary">
+            {formatTime(timeRemaining)}
+          </span>
+        </div>
         <span className="text-sm font-medium">
-          Question {currentQuestionIndex + 1} of {quizQuestions.length}
+          Question {currentQuestionIndex + 1} of {quizQuestions2.length}
         </span>
       </div>
 
@@ -117,7 +146,7 @@ const QuizComponent2 = () => {
               onClick={handleNext}
               disabled={isSubmitting}
             >
-              {currentQuestionIndex === quizQuestions.length - 1 ? 'Submit' : 'Next'}
+              {currentQuestionIndex === quizQuestions2.length - 1 ? 'Submit' : 'Next'}
             </Button>
           </div>
         </CardContent>
