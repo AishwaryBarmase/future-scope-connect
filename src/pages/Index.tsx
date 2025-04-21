@@ -13,7 +13,7 @@ import PsychometricTestsSection from '@/components/PsychometricTestsSection';
 import OnboardingModal from '@/components/OnboardingModal';
 import { useAuth } from '@/context/AuthContext';
 import CareerExplorer from '@/components/CareerExplorer';
-import AIRecommendationSection from '@/components/AIRecommendationSection';
+import QuizSection from '@/components/QuizSection';
 
 const Index = () => {
   const { user, profile, loading } = useAuth();
@@ -111,8 +111,8 @@ const Index = () => {
             </div>
           </div>
           
-          {/* Add AI Recommendation Section instead of Testimonials */}
-          <AIRecommendationSection />
+          {/* Use our new Quiz Section instead of AI Recommendation */}
+          <QuizSection />
           
           {/* Add Psychometric Tests Section */}
           <PsychometricTestsSection />

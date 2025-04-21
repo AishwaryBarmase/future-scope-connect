@@ -1,254 +1,463 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { motion } from 'framer-motion';
-import { useCareerOptions } from '@/hooks/useCareerOptions';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { useYouTubeVideos } from '@/hooks/useYouTubeVideos';
-import { Home, ArrowLeft } from 'lucide-react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import { fetchCourseraContent } from '@/utils/courseraApi';
-import { getRoadmapLink } from '@/data/careerRoadmaps';
+import { ExternalLink } from 'lucide-react';
+import useCareerOptions from '@/hooks/useCareerOptions';
+import axios from 'axios';
 
-interface CourseraArticle {
+interface CareerInfo {
+  id: string;
   title: string;
-  link: string;
-  author?: string;
+  description: string;
+  category_id: string;
+  course_links?: any[];
+  keywords?: string[];
 }
 
+interface CourseraResult {
+  name: string;
+  link: string;
+  description: string;
+  partner?: string;
+}
+
+interface CardProps {
+  title: string;
+  description: string;
+  link: string;
+  source?: string;
+}
+
+const CourseCard = ({ title, description, link, source }: CardProps) => (
+  <Card className="h-full">
+    <CardHeader>
+      <CardTitle className="line-clamp-2 text-lg">
+        {title}
+      </CardTitle>
+      {source && (
+        <CardDescription>
+          {source}
+        </CardDescription>
+      )}
+    </CardHeader>
+    <CardContent className="flex flex-col justify-between h-full gap-4">
+      <p className="text-gray-600 line-clamp-3 flex-grow">
+        {description}
+      </p>
+      <Button 
+        variant="outline" 
+        className="w-full mt-2 gap-1"
+        onClick={() => window.open(link, '_blank')}
+      >
+        View Course <ExternalLink className="h-4 w-4" />
+      </Button>
+    </CardContent>
+  </Card>
+);
+
+const ArticleCard = ({ title, description, link, source }: CardProps) => (
+  <Card className="h-full">
+    <CardHeader>
+      <CardTitle className="line-clamp-2 text-lg">
+        {title}
+      </CardTitle>
+      {source && (
+        <CardDescription>
+          {source}
+        </CardDescription>
+      )}
+    </CardHeader>
+    <CardContent className="flex flex-col justify-between h-full gap-4">
+      <p className="text-gray-600 line-clamp-3 flex-grow">
+        {description}
+      </p>
+      <Button 
+        variant="outline" 
+        className="w-full mt-2 gap-1"
+        onClick={() => window.open(link, '_blank')}
+      >
+        Read Article <ExternalLink className="h-4 w-4" />
+      </Button>
+    </CardContent>
+  </Card>
+);
+
 const CareerDetail = () => {
-  const { categoryTitle, careerTitle } = useParams<{ categoryTitle: string; careerTitle?: string }>();
-  const { categories, careerOptions, loading: loadingOptions } = useCareerOptions();
-  const [courseraContent, setCourseraContent] = useState<{ courses: any[], articles: CourseraArticle[] }>({ 
-    courses: [], 
-    articles: [] 
-  });
+  const { categoryTitle, careerTitle } = useParams<{ categoryTitle: string, careerTitle: string }>();
+  const [career, setCareer] = useState<CareerInfo | null>(null);
+  const [relatedCareers, setRelatedCareers] = useState<CareerInfo[]>([]);
+  const [category, setCategory] = useState<{ title: string, id: string } | null>(null);
+  const [courseraResults, setCourseraResults] = useState<CourseraResult[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [articlesLoading, setArticlesLoading] = useState(true);
+  const [coursesLoading, setCoursesLoading] = useState(true);
+  const { categories, options } = useCareerOptions();
   
-  const decodedCategoryTitle = categoryTitle ? decodeURIComponent(categoryTitle) : '';
-  const decodedCareerTitle = careerTitle ? decodeURIComponent(careerTitle) : '';
-  
-  const category = categories.find(cat => cat.title === decodedCategoryTitle);
-  const careerOptionsInCategory = careerOptions.filter(option => 
-    option.category_id === category?.id
-  );
-  
-  const selectedCareer = careerTitle 
-    ? careerOptionsInCategory.find(option => option.title === decodedCareerTitle)
-    : null;
+  // YouTube hook
+  const searchTerm = career?.title ? `career in ${career.title}` : '';
+  const { videos, loading: videosLoading } = useYouTubeVideos(searchTerm);
 
-  const searchQuery = selectedCareer 
-    ? `${selectedCareer.title} career guide` 
-    : `${decodedCategoryTitle} careers guide`;
+  // Get course links
+  const fetchCourseraData = async (careerTitle: string) => {
+    setCoursesLoading(true);
+    try {
+      // We'll use a mock API for now, but this could be replaced with a real API call
+      const mockCourses: CourseraResult[] = [
+        {
+          name: `Introduction to ${careerTitle}`,
+          link: "https://www.coursera.org/",
+          description: `Learn the fundamentals of ${careerTitle} and get started on your path to becoming a professional.`,
+          partner: "University of California"
+        },
+        {
+          name: `Advanced ${careerTitle} Techniques`,
+          link: "https://www.coursera.org/",
+          description: `Take your ${careerTitle} skills to the next level with advanced techniques and methodologies.`,
+          partner: "Stanford University"
+        },
+        {
+          name: `${careerTitle} Certification Program`,
+          link: "https://www.coursera.org/",
+          description: `Get certified in ${careerTitle} and boost your career prospects with this comprehensive program.`,
+          partner: "Google"
+        },
+        {
+          name: `${careerTitle} for Beginners`,
+          link: "https://www.coursera.org/",
+          description: `No prior experience needed. This course will guide you through the basics of ${careerTitle}.`,
+          partner: "IBM"
+        }
+      ];
+      
+      setCourseraResults(mockCourses);
+    } catch (error) {
+      console.error("Error fetching Coursera data:", error);
+      setCourseraResults([]);
+    } finally {
+      setCoursesLoading(false);
+    }
+  };
 
-  const { videos, loading: loadingVideos } = useYouTubeVideos(searchQuery, 6);
-  const roadmapLink = selectedCareer ? getRoadmapLink(selectedCareer.title) : null;
+  const fetchArticleData = async (searchTerm: string) => {
+    // This would normally be a real API call, but we'll use mock data
+    setArticlesLoading(true);
+    try {
+      const mockArticles = [
+        {
+          name: `How to Start a Career in ${searchTerm}`,
+          link: "https://medium.com/",
+          description: `A comprehensive guide to launching your career in ${searchTerm}, including education requirements, job prospects, and salary expectations.`,
+          source: "Medium"
+        },
+        {
+          name: `${searchTerm}: Industry Trends for ${new Date().getFullYear()}`,
+          link: "https://www.forbes.com/",
+          description: `Explore the latest trends, technologies, and opportunities in the ${searchTerm} field that are shaping the industry this year.`,
+          source: "Forbes"
+        },
+        {
+          name: `5 Skills You Need to Succeed in ${searchTerm}`,
+          link: "https://www.linkedin.com/",
+          description: `Industry experts share the most in-demand skills for ${searchTerm} professionals in today's competitive job market.`,
+          source: "LinkedIn"
+        }
+      ];
+      return mockArticles;
+    } catch (error) {
+      console.error("Error fetching articles:", error);
+      return [];
+    } finally {
+      setArticlesLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchContent = async () => {
+    const fetchCareerData = async () => {
+      setLoading(true);
+      
       try {
-        const content = await fetchCourseraContent(searchQuery);
-        setCourseraContent(content);
+        // First find the category
+        const categoryResult = await supabase
+          .from('career_categories')
+          .select('id, title')
+          .eq('slug', categoryTitle)
+          .single();
+          
+        if (categoryResult.error) throw categoryResult.error;
+        setCategory(categoryResult.data);
+        
+        // Then find the specific career option
+        const careerResult = await supabase
+          .from('career_options')
+          .select('*')
+          .eq('category_id', categoryResult.data.id)
+          .eq('title', careerTitle)
+          .single();
+          
+        if (careerResult.error) throw careerResult.error;
+        setCareer(careerResult.data);
+        
+        // Fetch related careers in the same category
+        const relatedResult = await supabase
+          .from('career_options')
+          .select('*')
+          .eq('category_id', categoryResult.data.id)
+          .neq('title', careerTitle)
+          .limit(4);
+          
+        if (relatedResult.error) throw relatedResult.error;
+        setRelatedCareers(relatedResult.data);
+        
+        // Fetch course recommendations
+        fetchCourseraData(careerTitle || '');
+        
+        // Fetch article data
+        const articles = await fetchArticleData(careerTitle || '');
+        
       } catch (error) {
-        console.error("Error fetching Coursera content:", error);
-        // Provide fallback content in case of API error
-        setCourseraContent({
-          courses: [
-            { name: "Introduction to the Field", partner: "FutureScope University", link: "https://www.coursera.org" },
-            { name: "Fundamentals and Best Practices", partner: "Career Academy", link: "https://www.coursera.org" },
-            { name: "Advanced Skills Development", partner: "Professional Institute", link: "https://www.coursera.org" }
-          ],
-          articles: [
-            { title: "Getting Started in Your Career", link: "https://www.coursera.org" },
-            { title: "Industry Trends and Insights", link: "https://www.coursera.org" },
-            { title: "Skills That Will Make You Stand Out", link: "https://www.coursera.org" }
-          ]
-        });
+        console.error("Error fetching career data:", error);
+      } finally {
+        setLoading(false);
       }
     };
     
-    fetchContent();
-  }, [searchQuery]);
+    if (categoryTitle && careerTitle) {
+      fetchCareerData();
+    }
+  }, [categoryTitle, careerTitle]);
 
-  if (loadingOptions) {
-    return <div className="text-center py-20 min-h-screen">Loading career information...</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </main>
+        <Footer />
+      </div>
+    );
   }
 
-  // Split videos into two rows
-  const firstRowVideos = videos.slice(0, 3);
-  const secondRowVideos = videos.slice(3, 6);
+  if (!career || !category) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-4">Career Not Found</h2>
+            <p className="mb-6">The career you're looking for doesn't exist or has been moved.</p>
+            <Link to="/#careers">
+              <Button>Explore Other Careers</Button>
+            </Link>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-white via-blue-50 to-purple-50">
+    <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-grow pt-20">
-        <div className="container mx-auto px-4 py-12">
-          <div className="flex justify-between items-center mb-8">
-            <div className="flex items-center space-x-4">
-              <Link to="/">
-                <Button variant="outline" size="sm" className="flex items-center gap-1">
-                  <Home size={16} /> Home
-                </Button>
-              </Link>
-              <Link to="/#careers">
-                <Button variant="outline" size="sm" className="flex items-center gap-1">
-                  <ArrowLeft size={16} /> Back to Careers
-                </Button>
-              </Link>
+      <main className="flex-grow py-16">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Career Details */}
+            <div className="lg:col-span-2">
+              <div className="mb-6">
+                <nav className="flex mb-4" aria-label="Breadcrumb">
+                  <ol className="inline-flex items-center space-x-1 md:space-x-3">
+                    <li className="inline-flex items-center">
+                      <Link to="/" className="text-sm text-gray-500 hover:text-gray-700">Home</Link>
+                    </li>
+                    <li>
+                      <div className="flex items-center">
+                        <span className="mx-2 text-gray-400">/</span>
+                        <Link to="/#careers" className="text-sm text-gray-500 hover:text-gray-700">Careers</Link>
+                      </div>
+                    </li>
+                    <li>
+                      <div className="flex items-center">
+                        <span className="mx-2 text-gray-400">/</span>
+                        <span className="text-sm text-gray-500">{category.title}</span>
+                      </div>
+                    </li>
+                    <li aria-current="page">
+                      <div className="flex items-center">
+                        <span className="mx-2 text-gray-400">/</span>
+                        <span className="text-sm font-medium text-gray-700">{career.title}</span>
+                      </div>
+                    </li>
+                  </ol>
+                </nav>
+                
+                <h1 className="text-3xl font-bold gradient-text mb-4">{career.title}</h1>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {career.keywords?.map((keyword, index) => (
+                    <span key={index} className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full">
+                      {keyword}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="prose max-w-none mb-8">
+                <p className="text-lg text-gray-700 whitespace-pre-line">
+                  {career.description || 
+                    `A career in ${career.title} offers exciting opportunities for those interested in ${category.title}. 
+                    This field combines technical knowledge, problem-solving skills, and creativity to deliver innovative solutions.
+                    
+                    Professionals in this area typically need strong analytical abilities, attention to detail, and excellent communication skills. The career path can include roles such as junior ${career.title}, senior ${career.title}, and ${career.title} manager or director.
+                    
+                    The industry outlook is promising, with growing demand for skilled professionals and competitive compensation packages. Most positions require a bachelor's degree in a related field, though some may require advanced degrees or specialized certifications.`
+                  }
+                </p>
+              </div>
+              
+              <Tabs defaultValue="courses" className="mb-10">
+                <TabsList className="grid grid-cols-3 mb-6">
+                  <TabsTrigger value="courses">Recommended Courses</TabsTrigger>
+                  <TabsTrigger value="videos">Videos</TabsTrigger>
+                  <TabsTrigger value="articles">Articles</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="courses" className="mt-0">
+                  {coursesLoading ? (
+                    <div className="flex justify-center py-10">
+                      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                    </div>
+                  ) : courseraResults.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {courseraResults.map((course, index) => (
+                        <CourseCard
+                          key={index}
+                          title={course.name}
+                          description={course.description}
+                          link={course.link}
+                          source={course.partner}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-10">
+                      <p className="text-gray-500">No courses found for this career.</p>
+                    </div>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="videos" className="mt-0">
+                  {videosLoading ? (
+                    <div className="flex justify-center py-10">
+                      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                    </div>
+                  ) : videos.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {videos.map((video, index) => (
+                        <div key={index} className="aspect-video">
+                          <iframe
+                            className="w-full h-full rounded-lg shadow-md"
+                            src={`https://www.youtube.com/embed/${video.id}`}
+                            title={video.title}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          ></iframe>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-10">
+                      <p className="text-gray-500">No videos found for this career.</p>
+                    </div>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="articles" className="mt-0">
+                  {articlesLoading ? (
+                    <div className="flex justify-center py-10">
+                      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <ArticleCard
+                        title={`How to Start a Career in ${career.title}`}
+                        description={`A comprehensive guide to launching your career in ${career.title}, including education requirements, job prospects, and salary expectations.`}
+                        link="https://medium.com/"
+                        source="Medium"
+                      />
+                      <ArticleCard
+                        title={`${career.title}: Industry Trends for ${new Date().getFullYear()}`}
+                        description={`Explore the latest trends, technologies, and opportunities in the ${career.title} field that are shaping the industry this year.`}
+                        link="https://www.forbes.com/"
+                        source="Forbes"
+                      />
+                      <ArticleCard
+                        title={`5 Skills You Need to Succeed in ${career.title}`}
+                        description={`Industry experts share the most in-demand skills for ${career.title} professionals in today's competitive job market.`}
+                        link="https://www.linkedin.com/"
+                        source="LinkedIn"
+                      />
+                      <ArticleCard
+                        title={`Day in the Life: ${career.title} Professional`}
+                        description={`Get an inside look at what it's really like to work as a ${career.title} professional, from daily tasks to challenges and rewards.`}
+                        link="https://www.indeed.com/"
+                        source="Indeed"
+                      />
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </div>
+            
+            {/* Sidebar */}
+            <div>
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle>Related Careers</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2">
+                    {relatedCareers.map(relatedCareer => (
+                      <li key={relatedCareer.id}>
+                        <Link 
+                          to={`/career/${categoryTitle}/${relatedCareer.title}`}
+                          className="text-primary hover:underline block py-1"
+                        >
+                          {relatedCareer.title}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Explore Other Categories</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2">
+                    {categories.filter(cat => cat.id !== category.id).slice(0, 5).map(cat => (
+                      <li key={cat.id}>
+                        <Link 
+                          to={`/#careers`}
+                          className="text-gray-700 hover:text-primary block py-1"
+                        >
+                          {cat.title}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
             </div>
           </div>
-          
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-10"
-          >
-            <h1 className="text-3xl md:text-4xl font-bold mb-4 gradient-text">
-              {selectedCareer?.title || `${decodedCategoryTitle} Careers`}
-            </h1>
-            {selectedCareer && (
-              <div className="space-y-4">
-                <p className="text-lg text-gray-700">
-                  {selectedCareer.description}
-                </p>
-                {roadmapLink && (
-                  <div className="mt-4">
-                    <Button
-                      onClick={() => window.open(roadmapLink, '_blank')}
-                      className="bg-primary hover:bg-primary/90"
-                    >
-                      View Career Roadmap
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
-          </motion.div>
-
-          {/* YouTube Videos Section - First Row */}
-          <section className="mb-8">
-            <h2 className="text-2xl font-semibold mb-6">Career Guide Videos</h2>
-            <div className="grid md:grid-cols-3 gap-6">
-              {loadingVideos ? (
-                <div className="col-span-full text-center py-8">Loading videos...</div>
-              ) : firstRowVideos.length === 0 ? (
-                <div className="col-span-full text-center py-8">No videos found</div>
-              ) : (
-                firstRowVideos.map(video => (
-                  <motion.div 
-                    key={video.id}
-                    whileHover={{ scale: 1.02 }}
-                    className="bg-white rounded-lg overflow-hidden shadow-md"
-                  >
-                    <div className="aspect-video">
-                      <iframe
-                        src={video.videoUrl}
-                        title={video.title}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        className="w-full h-full"
-                      />
-                    </div>
-                    <div className="p-4">
-                      <h4 className="font-medium text-sm line-clamp-2 h-10">
-                        {video.title}
-                      </h4>
-                    </div>
-                  </motion.div>
-                ))
-              )}
-            </div>
-          </section>
-
-          {/* YouTube Videos Section - Second Row (Playlists) */}
-          {secondRowVideos.length > 0 && (
-            <section className="mb-12">
-              <h2 className="text-2xl font-semibold mb-6">Related Playlists</h2>
-              <div className="grid md:grid-cols-3 gap-6">
-                {secondRowVideos.map(video => (
-                  <motion.div 
-                    key={video.id}
-                    whileHover={{ scale: 1.02 }}
-                    className="bg-white rounded-lg overflow-hidden shadow-md"
-                  >
-                    <div className="aspect-video">
-                      <iframe
-                        src={video.videoUrl}
-                        title={video.title}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        className="w-full h-full"
-                      />
-                    </div>
-                    <div className="p-4">
-                      <h4 className="font-medium text-sm line-clamp-2 h-10">
-                        {video.title}
-                      </h4>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Course Recommendations Section */}
-          <section className="mb-12">
-            <h2 className="text-2xl font-semibold mb-6">Recommended Courses</h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              {courseraContent.courses.length === 0 ? (
-                <div className="col-span-full text-center py-8">No courses found</div>
-              ) : (
-                courseraContent.courses.map((course, index) => (
-                  <Card key={index} className="bg-white hover:shadow-lg transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h3 className="font-semibold text-lg mb-2">{course.name}</h3>
-                          <p className="text-sm text-gray-600">Provider: {course.partner}</p>
-                        </div>
-                      </div>
-                      <Button 
-                        variant="outline" 
-                        className="w-full"
-                        onClick={() => window.open(course.link, '_blank')}
-                      >
-                        View Course
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
-          </section>
-
-          {/* Articles Section */}
-          <section className="mb-12">
-            <h2 className="text-2xl font-semibold mb-6">Related Articles</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {courseraContent.articles.length === 0 ? (
-                <div className="col-span-full text-center py-8">No articles found</div>
-              ) : (
-                courseraContent.articles.map((article, index) => (
-                  <Card key={index} className="bg-white hover:shadow-lg transition-shadow">
-                    <CardContent className="p-6">
-                      <h3 className="font-semibold text-lg mb-2 line-clamp-2">{article.title}</h3>
-                      {article.author && (
-                        <p className="text-sm text-gray-600 mb-4">By: {article.author}</p>
-                      )}
-                      <Button 
-                        variant="outline" 
-                        className="w-full"
-                        onClick={() => window.open(article.link, '_blank')}
-                      >
-                        Read Article
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
-          </section>
         </div>
       </main>
       <Footer />
