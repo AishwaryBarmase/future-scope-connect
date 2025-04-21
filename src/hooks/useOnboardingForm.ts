@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { Json } from '@/integrations/supabase/types';
 
 export interface OnboardingFormData {
   age: string;

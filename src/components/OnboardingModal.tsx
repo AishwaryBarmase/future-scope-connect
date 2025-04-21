@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -29,7 +28,7 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ open, onOpenChange })
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const { formData, handleInputChange, handleSelectChange } = useOnboardingForm();
+  const { formData, handleInputChange, handleSelectChange, getMetadataObject } = useOnboardingForm();
 
   const handleNext = () => {
     if (step < 4) {
@@ -53,7 +52,7 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ open, onOpenChange })
       const { error } = await supabase
         .from('profiles')
         .update({
-          metadata: formData,
+          metadata: getMetadataObject(),
           onboarding_completed: true
         })
         .eq('id', user.id);
@@ -179,4 +178,3 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ open, onOpenChange })
 };
 
 export default OnboardingModal;
-
