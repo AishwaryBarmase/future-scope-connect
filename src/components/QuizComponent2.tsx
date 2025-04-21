@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { quizQuestions2 } from '../data/quizQuestions2';
+import { quizQuestions } from '../data/quizQuestions';
 import { convertResponsesToVector, getCareerMatches } from '../utils/careerVectorUtils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from '../hooks/use-toast';
@@ -17,8 +17,9 @@ const QuizComponent2 = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const currentQuestion = quizQuestions2[currentQuestionIndex];
-  const progress = ((currentQuestionIndex + 1) / quizQuestions2.length) * 100;
+  // We now use the quizQuestions array which contains all 15 aptitude questions
+  const currentQuestion = quizQuestions[currentQuestionIndex];
+  const progress = ((currentQuestionIndex + 1) / quizQuestions.length) * 100;
 
   const handleOptionSelect = (questionId: string, optionId: string) => {
     setUserResponses(prev => ({
@@ -37,7 +38,7 @@ const QuizComponent2 = () => {
       return;
     }
 
-    if (currentQuestionIndex === quizQuestions2.length - 1) {
+    if (currentQuestionIndex === quizQuestions.length - 1) {
       await handleSubmit();
     } else {
       setCurrentQuestionIndex(prev => prev + 1);
@@ -47,13 +48,11 @@ const QuizComponent2 = () => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const userVector = convertResponsesToVector(userResponses);
-      const matches = await getCareerMatches(userVector);
-      
+      // For aptitude quiz, we'll send the responses directly
       navigate('/results', { 
         state: { 
-          careerMatches: matches,
-          responses: userResponses 
+          responses: userResponses,
+          quizType: 'aptitude'
         } 
       });
     } catch (error) {
@@ -82,7 +81,7 @@ const QuizComponent2 = () => {
           Cancel
         </Button>
         <span className="text-sm font-medium">
-          Question {currentQuestionIndex + 1} of {quizQuestions2.length}
+          Question {currentQuestionIndex + 1} of {quizQuestions.length}
         </span>
       </div>
 
@@ -118,7 +117,7 @@ const QuizComponent2 = () => {
               onClick={handleNext}
               disabled={isSubmitting}
             >
-              {currentQuestionIndex === quizQuestions2.length - 1 ? 'Submit' : 'Next'}
+              {currentQuestionIndex === quizQuestions.length - 1 ? 'Submit' : 'Next'}
             </Button>
           </div>
         </CardContent>

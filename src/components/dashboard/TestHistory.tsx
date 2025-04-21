@@ -22,6 +22,17 @@ const TestHistory: React.FC<TestHistoryProps> = ({ testHistory }) => {
     });
   };
 
+  const formatTestType = (type: string) => {
+    switch(type) {
+      case 'aptitude':
+        return 'Aptitude Assessment';
+      case 'career-matching':
+        return 'Career Matching Quiz';
+      default:
+        return type.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    }
+  };
+
   return (
     <div className="bg-white shadow-md rounded-lg p-6 mb-8">
       <h2 className="text-xl font-semibold mb-4">Test History</h2>
@@ -36,8 +47,8 @@ const TestHistory: React.FC<TestHistoryProps> = ({ testHistory }) => {
         testHistory.map((test) => (
           <Card key={test.id} className="mb-4">
             <CardHeader>
-              <CardTitle className="capitalize">
-                {test.test_type.replace('-', ' ')} Test
+              <CardTitle>
+                {formatTestType(test.test_type)}
               </CardTitle>
             </CardHeader>
             <CardContent>

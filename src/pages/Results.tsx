@@ -72,6 +72,7 @@ const Results = () => {
   // Retrieve responses and quiz type from location state
   const responses = location.state?.responses || {};
   const quizType = location.state?.quizType || "aptitude";
+  const careerMatchesFromState = location.state?.careerMatches || [];
   
   useEffect(() => {
     if (!user) {
@@ -103,8 +104,15 @@ const Results = () => {
         
         // Different calculation logic based on quiz type
         if (quizType === "career-matching") {
-          // For career matching quiz, we directly use the matches from location state
-          const matches = location.state?.careerMatches || [];
+          // For career matching quiz, use the matches from location state or calculate them
+          let matches = careerMatchesFromState;
+          
+          // If no matches were provided, calculate them
+          if (matches.length === 0) {
+            const userVector = convertResponsesToVector(responses);
+            matches = await getCareerMatches(userVector);
+          }
+          
           setCareerSuggestions(matches);
           
           // Generate synthetic scores based on response patterns
@@ -119,7 +127,7 @@ const Results = () => {
           
           // Count preferences from responses
           Object.entries(responses).forEach(([qId, answer]) => {
-            const optionLetter = (answer as string).slice(-1);
+            const optionLetter = (answer as string).slice(-1).toLowerCase();
             switch(optionLetter) {
               case 'a': syntheticScores['Technical'] += 20; break;
               case 'b': syntheticScores['Creative'] += 20; break;
@@ -165,7 +173,7 @@ const Results = () => {
           setOverallPerformance(Math.round(userAvg));
           
         } else {
-          // Original aptitude quiz calculation
+          // Aptitude quiz calculation
           // Calculate user's scores by category
           const userScores: ScoresData = {};
           const categories = ['IQ', 'Personality', 'Numerical Ability', 'Memory', 'Career Interests', 'Mechanical Reasoning', 'Abstract Reasoning', 'EQ'];
@@ -176,7 +184,6 @@ const Results = () => {
             const categoryResponses = Object.keys(responses).filter(key => key.startsWith(category.substring(0, 2)));
             
             // Calculate score based on responses (simplified scoring for demonstration)
-            // In a real app, you'd have a more sophisticated scoring algorithm
             let score = 0;
             const correctAnswers: Record<string, string> = {
               'IQ01': 'IQ01-2', // 49
@@ -224,7 +231,6 @@ const Results = () => {
           setScores(userScores);
           
           // Fetch average scores from other users
-          // In a real app, this would be a database query to get aggregate data
           const mockAverageScores: ScoresData = {
             'IQ': 65,
             'Personality': 70,
@@ -253,26 +259,9 @@ const Results = () => {
           const userAvg = userTotal / Object.values(userScores).length;
           setOverallPerformance(Math.round(userAvg));
           
-          // Generate career suggestions based on scores
-          // In a real app, this would use a more sophisticated algorithm
-          const mockCareers = [
-            { name: "Software Developer", match: userScores['IQ'] * 0.3 + userScores['Numerical Ability'] * 0.3 + userScores['Abstract Reasoning'] * 0.2 + userScores['Career Interests'] * 0.2 },
-            { name: "Data Scientist", match: userScores['IQ'] * 0.25 + userScores['Numerical Ability'] * 0.4 + userScores['Abstract Reasoning'] * 0.25 + userScores['EQ'] * 0.1 },
-            { name: "UX Designer", match: userScores['Abstract Reasoning'] * 0.3 + userScores['EQ'] * 0.3 + userScores['Personality'] * 0.25 + userScores['Career Interests'] * 0.15 },
-            { name: "Project Manager", match: userScores['EQ'] * 0.4 + userScores['Personality'] * 0.3 + userScores['IQ'] * 0.15 + userScores['Abstract Reasoning'] * 0.15 },
-            { name: "Mechanical Engineer", match: userScores['Mechanical Reasoning'] * 0.4 + userScores['IQ'] * 0.2 + userScores['Numerical Ability'] * 0.3 + userScores['Abstract Reasoning'] * 0.1 }
-          ];
-          
-          // Sort and format career suggestions
-          const sortedCareers = mockCareers
-            .map(career => ({ 
-              ...career, 
-              match: Math.min(Math.round(career.match / 100), 100) 
-            }))
-            .sort((a, b) => b.match - a.match)
-            .slice(0, 5);
-          
-          setCareerSuggestions(sortedCareers);
+          // Use the KNN algorithm for career matching based on aptitude scores
+          const matches = await processAptitudeResults(responses);
+          setCareerSuggestions(matches);
         }
         
       } catch (error) {
@@ -283,7 +272,7 @@ const Results = () => {
     };
     
     calculateScores();
-  }, [user, navigate, responses, quizType]);
+  }, [user, navigate, responses, quizType, careerMatchesFromState]);
   
   if (loading) {
     return (
@@ -564,15 +553,15 @@ const Results = () => {
                       {careerSuggestions.map((career, index) => (
                         <div key={index} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                           <div className="flex justify-between items-center mb-2">
-                            <h3 className="font-semibold text-lg">{career.name}</h3>
+                            <h3 className="font-semibold text-lg">{career.career_path}</h3>
                             <span className="text-sm font-medium bg-primary/10 text-primary py-1 px-2 rounded-full">
-                              {career.match}% Match
+                              {career.similarity_score}% Match
                             </span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-2">
                             <div 
                               className="bg-primary h-2 rounded-full" 
-                              style={{ width: `${career.match}%` }}
+                              style={{ width: `${career.similarity_score}%` }}
                             ></div>
                           </div>
                         </div>
