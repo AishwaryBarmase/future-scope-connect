@@ -1,3 +1,4 @@
+
 import { supabase } from '../integrations/supabase/client';
 import { CareerMatchResult } from '../types/quiz';
 
@@ -23,26 +24,25 @@ export const knnAlgorithm = (userScores: Record<string, number>, allCareers: any
     // Calculate Euclidean distance
     let distanceSum = 0;
     for (let i = 0; i < userVector.length; i++) {
-      const diff = (userVector[i] || 0) - (careerVector[i] || 0);
+      const diff = Number(userVector[i] || 0) - Number(careerVector[i] || 0);
       distanceSum += diff * diff;
     }
     const distance = Math.sqrt(distanceSum);
     
     return {
       career: career,
-      distance: distance
+      distance: Number(distance)
     };
   });
   
   // Sort by shortest distance
-  distances.sort((a, b) => a.distance - b.distance);
+  distances.sort((a, b) => Number(a.distance) - Number(b.distance));
   
   // Return k nearest careers with match percentage
-  // Fix: Ensure maxDistance is a number to prevent TypeScript error
-  const maxDistance = Math.max(...distances.map(d => d.distance)) || 1; // Prevent division by zero
+  const maxDistance = Math.max(...distances.map(d => Number(d.distance))) || 1; // Prevent division by zero
   return distances.slice(0, k).map(item => ({
     career_path: item.career.name,
-    similarity_score: Math.round((1 - item.distance / maxDistance) * 100)
+    similarity_score: Math.round((1 - Number(item.distance) / Number(maxDistance)) * 100)
   }));
 };
 
