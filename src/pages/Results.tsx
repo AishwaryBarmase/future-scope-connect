@@ -27,6 +27,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Brain, Award, LineChart as LineChartIcon } from "lucide-react";
 import { ChartContainer, ChartTooltipContent, ChartLegend } from "@/components/ui/chart";
+import { convertResponsesToVector, getCareerMatches, processAptitudeResults } from '../utils/careerVectorUtils';
 
 interface ScoresData {
   [category: string]: number;

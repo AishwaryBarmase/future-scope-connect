@@ -1,4 +1,3 @@
-
 import { supabase } from '../integrations/supabase/client';
 import { CareerMatchResult } from '../types/quiz';
 
@@ -39,7 +38,7 @@ export const knnAlgorithm = (userScores: Record<string, number>, allCareers: any
   distances.sort((a, b) => a.distance - b.distance);
   
   // Return k nearest careers with match percentage
-  const maxDistance = Math.max(...distances.map(d => d.distance));
+  const maxDistance = Math.max(...distances.map(d => d.distance)) || 1; // Prevent division by zero
   return distances.slice(0, k).map(item => ({
     career_path: item.career.name,
     similarity_score: Math.round((1 - item.distance / maxDistance) * 100)
