@@ -38,6 +38,7 @@ export const knnAlgorithm = (userScores: Record<string, number>, allCareers: any
   distances.sort((a, b) => a.distance - b.distance);
   
   // Return k nearest careers with match percentage
+  // Fix: Ensure maxDistance is a number to prevent TypeScript error
   const maxDistance = Math.max(...distances.map(d => d.distance)) || 1; // Prevent division by zero
   return distances.slice(0, k).map(item => ({
     career_path: item.career.name,
