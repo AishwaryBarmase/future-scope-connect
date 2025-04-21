@@ -191,37 +191,65 @@ const CareerDetail = () => {
           throw new Error("Missing category or career title");
         }
         
-        // First find the category
-        const categoryResult = await supabase
+        // Try to find the category by slug first, then by title if that fails
+        let categoryResult = await supabase
           .from('career_categories')
-          .select('id, title')
-          .eq('slug', categoryTitle)
-          .single();
+          .select('id, title, slug')
+          .eq('slug', categoryTitle.toLowerCase())
+          .maybeSingle();
           
-        if (categoryResult.error) throw categoryResult.error;
+        // If no category found by slug, try by title
+        if (!categoryResult.data) {
+          categoryResult = await supabase
+            .from('career_categories')
+            .select('id, title, slug')
+            .ilike('title', categoryTitle)
+            .maybeSingle();
+        }
+          
+        if (!categoryResult.data) {
+          throw new Error("Category not found");
+        }
+        
         setCategory(categoryResult.data);
         
-        // Then find the specific career option
-        const careerResult = await supabase
+        // Try to find the specific career option by matching title (case insensitive)
+        let careerResult = await supabase
           .from('career_options')
           .select('*')
           .eq('category_id', categoryResult.data.id)
-          .eq('title', careerTitle)
-          .single();
+          .ilike('title', careerTitle)
+          .maybeSingle();
           
-        if (careerResult.error) throw careerResult.error;
-        
-        // Convert any JSON course_links to an array or object before setting state
-        const careerInfo: CareerInfo = {
-          id: careerResult.data.id,
-          title: careerResult.data.title,
-          description: careerResult.data.description,
-          category_id: careerResult.data.category_id,
-          course_links: careerResult.data.course_links,
-          keywords: careerResult.data.keywords
-        };
-        
-        setCareer(careerInfo);
+        // If no results, create a placeholder career
+        if (!careerResult.data) {
+          const placeholderCareer: CareerInfo = {
+            id: 'placeholder',
+            title: careerTitle,
+            description: `A career in ${careerTitle} offers exciting opportunities for those interested in ${categoryResult.data.title}. 
+            This field combines technical knowledge, problem-solving skills, and creativity to deliver innovative solutions.
+            
+            Professionals in this area typically need strong analytical abilities, attention to detail, and excellent communication skills. The career path can include roles such as junior ${careerTitle}, senior ${careerTitle}, and ${careerTitle} manager or director.
+            
+            The industry outlook is promising, with growing demand for skilled professionals and competitive compensation packages. Most positions require a bachelor's degree in a related field, though some may require advanced degrees or specialized certifications.`,
+            category_id: categoryResult.data.id,
+            keywords: [careerTitle, categoryResult.data.title, 'Professional', 'Career']
+          };
+          
+          setCareer(placeholderCareer);
+        } else {
+          // Convert any JSON course_links to an array or object before setting state
+          const careerInfo: CareerInfo = {
+            id: careerResult.data.id,
+            title: careerResult.data.title,
+            description: careerResult.data.description || `A career in ${careerResult.data.title} offers exciting opportunities in the ${categoryResult.data.title} field.`,
+            category_id: careerResult.data.category_id,
+            course_links: careerResult.data.course_links,
+            keywords: careerResult.data.keywords || [careerResult.data.title, categoryResult.data.title]
+          };
+          
+          setCareer(careerInfo);
+        }
         
         // Check if we have a roadmap for this career
         if (careerTitle) {
@@ -234,22 +262,52 @@ const CareerDetail = () => {
           .from('career_options')
           .select('*')
           .eq('category_id', categoryResult.data.id)
-          .neq('title', careerTitle)
+          .not('title', 'ilike', careerTitle)
           .limit(4);
           
         if (relatedResult.error) throw relatedResult.error;
         
-        // Convert the related careers data to our CareerInfo type
-        const relatedCareerInfo: CareerInfo[] = relatedResult.data.map(career => ({
-          id: career.id,
-          title: career.title,
-          description: career.description,
-          category_id: career.category_id,
-          course_links: career.course_links,
-          keywords: career.keywords
-        }));
-        
-        setRelatedCareers(relatedCareerInfo);
+        // If we have related careers, use them; otherwise, create placeholders
+        if (relatedResult.data && relatedResult.data.length > 0) {
+          // Convert the related careers data to our CareerInfo type
+          const relatedCareerInfo: CareerInfo[] = relatedResult.data.map(career => ({
+            id: career.id,
+            title: career.title,
+            description: career.description || `A career in ${career.title} offers exciting opportunities in the ${categoryResult.data.title} field.`,
+            category_id: career.category_id,
+            course_links: career.course_links,
+            keywords: career.keywords || [career.title, categoryResult.data.title]
+          }));
+          
+          setRelatedCareers(relatedCareerInfo);
+        } else {
+          // Create placeholder related careers
+          const placeholderRelatedCareers: CareerInfo[] = [
+            {
+              id: 'related1',
+              title: `Senior ${careerTitle}`,
+              description: `A senior-level position in the ${careerTitle} field.`,
+              category_id: categoryResult.data.id,
+              keywords: [`Senior ${careerTitle}`, categoryResult.data.title]
+            },
+            {
+              id: 'related2',
+              title: `${careerTitle} Manager`,
+              description: `A management position overseeing ${careerTitle} professionals.`,
+              category_id: categoryResult.data.id,
+              keywords: [`${careerTitle} Manager`, categoryResult.data.title]
+            },
+            {
+              id: 'related3',
+              title: `${careerTitle} Specialist`,
+              description: `A specialized role in the ${careerTitle} field.`,
+              category_id: categoryResult.data.id,
+              keywords: [`${careerTitle} Specialist`, categoryResult.data.title]
+            }
+          ];
+          
+          setRelatedCareers(placeholderRelatedCareers);
+        }
         
         // Fetch course recommendations
         fetchCourseraData(careerTitle);

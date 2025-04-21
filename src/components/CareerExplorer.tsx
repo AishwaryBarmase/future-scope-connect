@@ -38,11 +38,15 @@ const CareerExplorer: React.FC = () => {
   }, [categories]);
 
   const handleCareerClick = (categoryTitle: string, careerTitle: string) => {
-    navigate(`/career/${encodeURIComponent(categoryTitle)}/${encodeURIComponent(careerTitle)}`);
+    // Fixed navigation - use slugs if available, otherwise use the titles
+    const categorySlug = categories.find(cat => cat.title === categoryTitle)?.slug || categoryTitle;
+    navigate(`/career/${encodeURIComponent(categorySlug)}/${encodeURIComponent(careerTitle)}`);
   };
 
   const handleCategoryClick = (categoryTitle: string) => {
-    navigate(`/career/${encodeURIComponent(categoryTitle)}`);
+    // Fixed navigation - use slugs if available, otherwise use the titles
+    const categorySlug = categories.find(cat => cat.title === categoryTitle)?.slug || categoryTitle;
+    navigate(`/career/${encodeURIComponent(categorySlug)}`);
   };
 
   if (loadingOptions) {
