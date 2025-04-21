@@ -9,7 +9,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useYouTubeVideos } from '@/hooks/useYouTubeVideos';
 import { ExternalLink } from 'lucide-react';
-import useCareerOptions from '@/hooks/useCareerOptions';
+import { useCareerOptions } from '@/hooks/useCareerOptions';
 import axios from 'axios';
 
 interface CareerInfo {
@@ -17,7 +17,7 @@ interface CareerInfo {
   title: string;
   description: string;
   category_id: string;
-  course_links?: any[];
+  course_links?: any;
   keywords?: string[];
 }
 
@@ -98,7 +98,7 @@ const CareerDetail = () => {
   const [loading, setLoading] = useState(true);
   const [articlesLoading, setArticlesLoading] = useState(true);
   const [coursesLoading, setCoursesLoading] = useState(true);
-  const { categories, options } = useCareerOptions();
+  const { categories, careerOptions } = useCareerOptions();
   
   // YouTube hook
   const searchTerm = career?.title ? `career in ${career.title}` : '';
@@ -202,7 +202,18 @@ const CareerDetail = () => {
           .single();
           
         if (careerResult.error) throw careerResult.error;
-        setCareer(careerResult.data);
+        
+        // Convert any JSON course_links to an array or object before setting state
+        const careerInfo: CareerInfo = {
+          id: careerResult.data.id,
+          title: careerResult.data.title,
+          description: careerResult.data.description,
+          category_id: careerResult.data.category_id,
+          course_links: careerResult.data.course_links,
+          keywords: careerResult.data.keywords
+        };
+        
+        setCareer(careerInfo);
         
         // Fetch related careers in the same category
         const relatedResult = await supabase
@@ -213,7 +224,18 @@ const CareerDetail = () => {
           .limit(4);
           
         if (relatedResult.error) throw relatedResult.error;
-        setRelatedCareers(relatedResult.data);
+        
+        // Convert the related careers data to our CareerInfo type
+        const relatedCareerInfo: CareerInfo[] = relatedResult.data.map(career => ({
+          id: career.id,
+          title: career.title,
+          description: career.description,
+          category_id: career.category_id,
+          course_links: career.course_links,
+          keywords: career.keywords
+        }));
+        
+        setRelatedCareers(relatedCareerInfo);
         
         // Fetch course recommendations
         fetchCourseraData(careerTitle || '');
