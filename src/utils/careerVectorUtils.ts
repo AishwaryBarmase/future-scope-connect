@@ -6,7 +6,7 @@ import { CareerMatchResult } from '../types/quiz';
 export const calculateCosineSimilarity = (vectorA: number[], vectorB: number[]): number => {
   const dotProduct = vectorA.reduce((sum, a, i) => sum + a * Number(vectorB[i] || 0), 0);
   const magnitudeA = Math.sqrt(vectorA.reduce((sum, a) => sum + a * a, 0));
-  const magnitudeB = Math.sqrt(vectorB.reduce((sum, b) => sum + b * b, 0));
+  const magnitudeB = Math.sqrt(vectorB.reduce((sum, b) => sum + Number(b) * Number(b), 0));
   return dotProduct / (magnitudeA * magnitudeB) || 0; // Prevent NaN
 };
 
@@ -104,7 +104,7 @@ export const getCareerMatches = async (userVector: number[]): Promise<CareerMatc
       const careerVector = new Array(90).fill(0);
       
       // Set some values in the vector based on career data
-      const keywordsHash = (career.keywords || []).reduce((acc, word, idx) => {
+      const keywordsHash = (career.keywords || []).reduce((acc: number, word: string, idx: number) => {
         return acc + (word.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) * (idx + 1));
       }, 0);
       
@@ -229,7 +229,7 @@ function generatePlaceholderCareerSuggestions(scores: Record<string, number>): C
   return mockCareers.map(career => {
     let matchScore = 0;
     Object.entries(career.weights).forEach(([category, weight]) => {
-      matchScore += (scores[category] || 0) * weight;
+      matchScore += (scores[category] || 0) * Number(weight);
     });
     
     return {

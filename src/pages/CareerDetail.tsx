@@ -10,7 +10,8 @@ import Footer from "@/components/Footer";
 import { useYouTubeVideos } from '@/hooks/useYouTubeVideos';
 import { ExternalLink } from 'lucide-react';
 import { useCareerOptions } from '@/hooks/useCareerOptions';
-import axios from 'axios';
+import { fetchCourseraContent } from '@/utils/courseraApi';
+import { getRoadmapLink } from '@/data/careerRoadmaps';
 
 interface CareerInfo {
   id: string;
@@ -95,10 +96,12 @@ const CareerDetail = () => {
   const [relatedCareers, setRelatedCareers] = useState<CareerInfo[]>([]);
   const [category, setCategory] = useState<{ title: string, id: string } | null>(null);
   const [courseraResults, setCourseraResults] = useState<CourseraResult[]>([]);
+  const [courseraArticles, setCourseraArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [articlesLoading, setArticlesLoading] = useState(true);
   const [coursesLoading, setCoursesLoading] = useState(true);
   const { categories, careerOptions } = useCareerOptions();
+  const [roadmapLink, setRoadmapLink] = useState<string | null>(null);
   
   // YouTube hook
   const searchTerm = career?.title ? `career in ${career.title}` : '';
@@ -107,9 +110,21 @@ const CareerDetail = () => {
   // Get course links
   const fetchCourseraData = async (careerTitle: string) => {
     setCoursesLoading(true);
+    setArticlesLoading(true);
+    
     try {
-      // We'll use a mock API for now, but this could be replaced with a real API call
-      const mockCourses: CourseraResult[] = [
+      // Fetch from Coursera API
+      const result = await fetchCourseraContent(careerTitle);
+      
+      // Transform course results
+      const courses = result.courses.map(course => ({
+        name: course.name,
+        link: course.link,
+        description: `Learn about ${careerTitle} from ${course.partner || 'a leading educational provider'}.`,
+        partner: course.partner
+      }));
+      
+      setCourseraResults(courses.length > 0 ? courses : [
         {
           name: `Introduction to ${careerTitle}`,
           link: "https://www.coursera.org/",
@@ -134,46 +149,35 @@ const CareerDetail = () => {
           description: `No prior experience needed. This course will guide you through the basics of ${careerTitle}.`,
           partner: "IBM"
         }
-      ];
+      ]);
       
-      setCourseraResults(mockCourses);
-    } catch (error) {
-      console.error("Error fetching Coursera data:", error);
-      setCourseraResults([]);
-    } finally {
-      setCoursesLoading(false);
-    }
-  };
-
-  const fetchArticleData = async (searchTerm: string) => {
-    // This would normally be a real API call, but we'll use mock data
-    setArticlesLoading(true);
-    try {
-      const mockArticles = [
+      // Process articles
+      setCourseraArticles(result.articles.length > 0 ? result.articles : [
         {
-          name: `How to Start a Career in ${searchTerm}`,
+          title: `How to Start a Career in ${careerTitle}`,
           link: "https://medium.com/",
-          description: `A comprehensive guide to launching your career in ${searchTerm}, including education requirements, job prospects, and salary expectations.`,
+          description: `A comprehensive guide to launching your career in ${careerTitle}, including education requirements, job prospects, and salary expectations.`,
           source: "Medium"
         },
         {
-          name: `${searchTerm}: Industry Trends for ${new Date().getFullYear()}`,
+          title: `${careerTitle}: Industry Trends for ${new Date().getFullYear()}`,
           link: "https://www.forbes.com/",
-          description: `Explore the latest trends, technologies, and opportunities in the ${searchTerm} field that are shaping the industry this year.`,
+          description: `Explore the latest trends, technologies, and opportunities in the ${careerTitle} field that are shaping the industry this year.`,
           source: "Forbes"
         },
         {
-          name: `5 Skills You Need to Succeed in ${searchTerm}`,
+          title: `5 Skills You Need to Succeed in ${careerTitle}`,
           link: "https://www.linkedin.com/",
-          description: `Industry experts share the most in-demand skills for ${searchTerm} professionals in today's competitive job market.`,
+          description: `Industry experts share the most in-demand skills for ${careerTitle} professionals in today's competitive job market.`,
           source: "LinkedIn"
         }
-      ];
-      return mockArticles;
+      ]);
     } catch (error) {
-      console.error("Error fetching articles:", error);
-      return [];
+      console.error("Error fetching Coursera data:", error);
+      setCourseraResults([]);
+      setCourseraArticles([]);
     } finally {
+      setCoursesLoading(false);
       setArticlesLoading(false);
     }
   };
@@ -183,6 +187,10 @@ const CareerDetail = () => {
       setLoading(true);
       
       try {
+        if (!categoryTitle || !careerTitle) {
+          throw new Error("Missing category or career title");
+        }
+        
         // First find the category
         const categoryResult = await supabase
           .from('career_categories')
@@ -215,6 +223,12 @@ const CareerDetail = () => {
         
         setCareer(careerInfo);
         
+        // Check if we have a roadmap for this career
+        if (careerTitle) {
+          const roadmap = getRoadmapLink(careerTitle);
+          setRoadmapLink(roadmap);
+        }
+        
         // Fetch related careers in the same category
         const relatedResult = await supabase
           .from('career_options')
@@ -238,11 +252,7 @@ const CareerDetail = () => {
         setRelatedCareers(relatedCareerInfo);
         
         // Fetch course recommendations
-        fetchCourseraData(careerTitle || '');
-        
-        // Fetch article data
-        const articles = await fetchArticleData(careerTitle || '');
-        
+        fetchCourseraData(careerTitle);
       } catch (error) {
         console.error("Error fetching career data:", error);
       } finally {
@@ -343,6 +353,19 @@ const CareerDetail = () => {
                 </p>
               </div>
               
+              {roadmapLink && (
+                <div className="mb-8">
+                  <Button 
+                    variant="outline" 
+                    className="gap-2"
+                    onClick={() => window.open(roadmapLink, '_blank')}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    View Career Roadmap
+                  </Button>
+                </div>
+              )}
+              
               <Tabs defaultValue="courses" className="mb-10">
                 <TabsList className="grid grid-cols-3 mb-6">
                   <TabsTrigger value="courses">Recommended Courses</TabsTrigger>
@@ -379,13 +402,13 @@ const CareerDetail = () => {
                     <div className="flex justify-center py-10">
                       <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
                     </div>
-                  ) : videos.length > 0 ? (
+                  ) : videos && videos.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {videos.map((video, index) => (
                         <div key={index} className="aspect-video">
                           <iframe
                             className="w-full h-full rounded-lg shadow-md"
-                            src={`https://www.youtube.com/embed/${video.id}`}
+                            src={video.videoUrl}
                             title={video.title}
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowFullScreen
@@ -404,6 +427,18 @@ const CareerDetail = () => {
                   {articlesLoading ? (
                     <div className="flex justify-center py-10">
                       <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                    </div>
+                  ) : courseraArticles && courseraArticles.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {courseraArticles.map((article, index) => (
+                        <ArticleCard
+                          key={index}
+                          title={article.title}
+                          description={article.description || `Read this article about ${career.title} careers and industry insights.`}
+                          link={article.link}
+                          source={article.source || article.author}
+                        />
+                      ))}
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

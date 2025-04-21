@@ -71,20 +71,25 @@ const QuizComponent2 = () => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      // For aptitude quiz, we'll send the responses directly
+      // For aptitude quiz, we'll process the responses and navigate to results page with all necessary data
+      const careerMatches = await processAptitudeResults(userResponses);
+      
+      // Navigate with all the necessary data for the results page
       navigate('/results', { 
         state: { 
           responses: userResponses,
-          quizType: 'aptitude'
-        } 
+          quizType: 'aptitude',
+          careerMatches: careerMatches
+        },
+        replace: true // Use replace to prevent going back to the quiz
       });
     } catch (error) {
+      console.error("Error submitting quiz:", error);
       toast({
         title: "Error",
         description: "There was an error submitting your answers. Please try again.",
         variant: "destructive"
       });
-    } finally {
       setIsSubmitting(false);
     }
   };

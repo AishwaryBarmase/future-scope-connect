@@ -11,26 +11,37 @@ import QuickLinks from "@/components/dashboard/QuickLinks";
 const Dashboard = () => {
   const { user, profile, loading } = useAuth();
   const [testHistory, setTestHistory] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
 
   useEffect(() => {
     const fetchTestHistory = async () => {
       if (user) {
-        const { data, error } = await supabase
-          .from('test_history')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+        setHistoryLoading(true);
+        try {
+          const { data, error } = await supabase
+            .from('test_history')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
 
-        if (data) {
-          setTestHistory(data);
-        }
-        if (error) {
-          console.error('Error fetching test history:', error);
+          if (error) {
+            console.error('Error fetching test history:', error);
+            setTestHistory([]);
+          } else {
+            setTestHistory(data || []);
+          }
+        } catch (err) {
+          console.error('Error in test history fetch:', err);
+          setTestHistory([]);
+        } finally {
+          setHistoryLoading(false);
         }
       }
     };
 
-    fetchTestHistory();
+    if (user) {
+      fetchTestHistory();
+    }
   }, [user]);
 
   if (loading) {
@@ -54,7 +65,7 @@ const Dashboard = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="col-span-2">
-              <TestHistory testHistory={testHistory} />
+              <TestHistory testHistory={testHistory} isLoading={historyLoading} />
             </div>
             
             <div>
