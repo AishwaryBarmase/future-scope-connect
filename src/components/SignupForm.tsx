@@ -78,6 +78,7 @@ const SignupForm = () => {
         email: formData.email,
         password: formData.password,
         options: {
+          emailRedirectTo: `${window.location.origin}/`,
           data: {
             full_name: `${formData.firstName} ${formData.lastName}`,
             education_level: formData.education,
