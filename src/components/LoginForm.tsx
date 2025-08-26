@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SignupForm from "./SignupForm";
 import { supabase } from "../integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { cleanupAuthState } from "@/utils/authCleanup";
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const LoginForm = () => {
@@ -27,6 +28,14 @@ const LoginForm = () => {
     setIsLoading(true);
 
     try {
+      // Clean up existing auth state to avoid limbo
+      try {
+        cleanupAuthState();
+        // Attempt global sign out (ignore errors)
+        // @ts-ignore - scope option is available at runtime
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch {}
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -48,9 +57,13 @@ const LoginForm = () => {
       }
     } catch (error: any) {
       console.error("Login error:", error);
+      const msg = (error?.message || '').toLowerCase();
+      const likelyUnconfirmed = msg.includes('email not confirmed') || msg.includes('confirm') || error?.code === 'invalid_credentials';
       toast({
         title: "Login failed",
-        description: error.message || "Please check your credentials and try again",
+        description: likelyUnconfirmed
+          ? "If you just signed up, please verify your email via the link we sent, then try again."
+          : (error.message || "Please check your credentials and try again"),
         variant: "destructive",
       });
     } finally {
